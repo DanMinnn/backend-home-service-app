@@ -1,23 +1,20 @@
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: mysql
-    cap_add:
-      - SYS_NICE
-    restart: always
+  postgres:
+    image: postgres
+    container_name: postgres
+    restart: unless-stopped
     environment:
-      - MYSQL_DATABASE=testdb
-      - MYSQL_ROOT_PASSWORD=password
-    ports:
-      - '3306:3306'
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: home-service
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
-    networks:
-      - default
+      - postgres:/data/postgres
+      - ./home-service.sql:/docker-entrypoint-initdb.d/home-service.sql
+    ports:
+      - '5432:5432'
 
   backend-service:
-    container_name: backend-service
+    container_name: home-service
     build:
       context: ./
       dockerfile: Dockerfile
@@ -27,8 +24,8 @@ services:
       - default
 
 networks:
-  default:
-    name: backend-service
+  backend:
+    driver: bridge
 
 volumes:
-  mysql_data:
+  postgres:
