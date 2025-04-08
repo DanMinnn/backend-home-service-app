@@ -15,7 +15,7 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "payments")
-public class Payments extends AbstractEntity<Long> {
+public class Payments extends AbstractEntityNoDate<Integer> {
 
     @ManyToOne
     @JoinColumn(name = "booking_id", nullable = false)

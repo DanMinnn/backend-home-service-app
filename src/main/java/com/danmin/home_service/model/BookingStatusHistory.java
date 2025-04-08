@@ -18,7 +18,7 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "booking_status_history")
-public class BookingStatusHistory extends AbstractEntity<Long> {
+public class BookingStatusHistory extends AbstractEntityNoDate<Integer> {
 
     @ManyToOne
     @JoinColumn(name = "booking_id")

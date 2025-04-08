@@ -13,7 +13,7 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "recommendation_logs")
-public class RecommendationLog extends AbstractEntity<Long> {
+public class RecommendationLog extends AbstractEntityNoDate<Integer> {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;

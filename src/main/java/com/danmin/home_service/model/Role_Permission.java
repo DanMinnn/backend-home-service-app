@@ -10,7 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "role_permissions")
-public class Role_Permission extends AbstractEntity<Integer> {
+public class Role_Permission extends AbstractEntityNoDate<Integer> {
 
     @ManyToOne
     @JoinColumn(name = "role_id")

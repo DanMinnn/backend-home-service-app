@@ -19,7 +19,7 @@ import lombok.*;
 @Entity
 @Table(name = "user_verifications")
 @Check(constraints = "(user_id IS NULL AND tasker_id IS NOT NULL) OR (user_id IS NOT NULL AND tasker_id IS NULL)")
-public class UserVerifications extends AbstractEntity<Long> {
+public class UserVerifications extends AbstractEntityCreatedAt<Long> {
 
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = true)

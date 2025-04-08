@@ -12,7 +12,7 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "tasker_unavailable_dates")
-public class TaskerUnavailableDate extends AbstractEntity<Long> {
+public class TaskerUnavailableDate extends AbstractEntityNoDate<Integer> {
 
     @ManyToOne
     @JoinColumn(name = "tasker_id")

@@ -12,7 +12,7 @@ import lombok.*;
 @Entity
 @Table(name = "system_settings")
 
-public class SystemSetting extends AbstractEntity<Long> {
+public class SystemSetting extends AbstractEntityNoDate<Integer> {
 
     @Column(name = "setting_key", nullable = false, unique = true)
     private String settingKey;

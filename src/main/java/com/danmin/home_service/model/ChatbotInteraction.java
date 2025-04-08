@@ -10,7 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "chatbot_interactions")
-public class ChatbotInteraction extends AbstractEntity<Long> {
+public class ChatbotInteraction extends AbstractEntityCreatedAt<Long> {
 
     @ManyToOne
     @JoinColumn(name = "user_id")

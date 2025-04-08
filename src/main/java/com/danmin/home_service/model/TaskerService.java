@@ -12,7 +12,7 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "tasker_services", uniqueConstraints = { @UniqueConstraint(columnNames = { "tasker_id, service_id" }) })
-public class TaskerService extends AbstractEntity<Long> {
+public class TaskerService extends AbstractEntityNoDate<Integer> {
 
     @ManyToOne
     @JoinColumn(name = "tasker_id")

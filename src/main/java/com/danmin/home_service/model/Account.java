@@ -52,12 +52,6 @@ public class Account extends AbstractEntity<Long> {
     @Column(columnDefinition = "TEXT")
     private String address;
 
-    @Column(name = "created_at", columnDefinition = "timestamp(6) default now()")
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", columnDefinition = "timestamp(6) default now()")
-    private LocalDateTime updatedAt;
-
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
 

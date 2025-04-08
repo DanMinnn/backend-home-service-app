@@ -12,7 +12,7 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "tasker_roles")
-public class TaskerRole extends AbstractEntity<Integer> {
+public class TaskerRole extends AbstractEntityNoDate<Integer> {
 
     @ManyToOne
     @JoinColumn(name = "tasker_id")

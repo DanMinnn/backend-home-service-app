@@ -12,7 +12,7 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "chat_rooms")
-public class ChatRoom extends AbstractEntity<Long> {
+public class ChatRoom extends AbstractEntityCreatedAt<Long> {
 
     @OneToOne
     @JoinColumn(name = "booking_id")

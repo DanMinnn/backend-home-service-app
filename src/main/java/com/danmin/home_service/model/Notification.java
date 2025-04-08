@@ -14,7 +14,7 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "notifications")
-public class Notification extends AbstractEntity<Long> {
+public class Notification extends AbstractEntityCreatedAt<Long> {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "recipient_type", nullable = false)

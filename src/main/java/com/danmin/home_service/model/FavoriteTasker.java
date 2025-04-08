@@ -11,7 +11,7 @@ import lombok.*;
 @Entity
 @Table(name = "favorite_tasker", uniqueConstraints = {
         @UniqueConstraint(columnNames = { "user_id, tasker_id, service_id" }) })
-public class FavoriteTasker extends AbstractEntity<Long> {
+public class FavoriteTasker extends AbstractEntityNoDate<Integer> {
 
     @OneToOne
     @JoinColumn(name = "user_id")

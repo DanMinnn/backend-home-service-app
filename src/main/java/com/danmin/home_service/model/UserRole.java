@@ -12,7 +12,7 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "user_roles")
-public class UserRole extends AbstractEntity<Integer> {
+public class UserRole extends AbstractEntityNoDate<Integer> {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;

@@ -17,7 +17,7 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "chat_messages")
-public class ChatMessage extends AbstractEntity<Long> {
+public class ChatMessage extends AbstractEntityNoDate<Integer> {
 
     @ManyToOne
     @JoinColumn(name = "room_id")

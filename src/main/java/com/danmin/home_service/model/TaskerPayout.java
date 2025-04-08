@@ -15,7 +15,7 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "tasker_payouts")
-public class TaskerPayout extends AbstractEntity<Long> {
+public class TaskerPayout extends AbstractEntityNoDate<Integer> {
 
     @ManyToOne
     @JoinColumn(name = "tasker_id")

@@ -10,7 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "service_categories")
-public class ServiceCategory extends AbstractEntity<Long> {
+public class ServiceCategory extends AbstractEntityNoDate<Integer> {
 
     @Column(name = "name", nullable = false)
     private String name;

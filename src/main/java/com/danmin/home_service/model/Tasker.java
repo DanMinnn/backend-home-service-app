@@ -26,7 +26,7 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "tasker")
-public class Tasker extends AbstractEntity<Long> {
+public class Tasker extends AbstractEntityNoDate<Integer> {
 
     @Column(name = "earth_location", columnDefinition = "earth")
     private String earthLocation;

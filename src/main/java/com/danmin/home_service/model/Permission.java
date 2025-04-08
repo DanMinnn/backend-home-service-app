@@ -10,7 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "permissions")
-public class Permission extends AbstractEntity<Long> {
+public class Permission extends AbstractEntityCreatedAt<Long> {
 
     @Column(name = "permission_name", nullable = false, unique = true)
     private String permissionName;
