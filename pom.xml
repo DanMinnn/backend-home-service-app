@@ -76,6 +76,57 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+
+		<!--JWT-->
+		<dependency>
+    	<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-api</artifactId>
+			<version>0.12.6</version>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-impl</artifactId>
+			<version>0.12.6</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-jackson</artifactId>
+			<version>0.12.6</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!--spring security-->
+		 <dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+    	</dependency>
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-test</artifactId>
+			<scope>test</scope>
+   	 	</dependency>
+
+		<!--SendGrid API for Email-->
+		<dependency>
+			<groupId>com.sendgrid</groupId>
+			<artifactId>sendgrid-java</artifactId>
+			<version>4.10.3</version>
+		</dependency>
+
+		<!--Redis-->
+		<dependency>
+             <groupId>org.springframework.data</groupId>
+             <artifactId>spring-data-redis</artifactId>
+             <scope>compile</scope>
+         </dependency>
+         <dependency>
+             <groupId>redis.clients</groupId>
+             <artifactId>jedis</artifactId>
+             <version>5.2.0</version>
+             <optional>true</optional>
+         </dependency>
 	</dependencies>
 
 	<profiles>

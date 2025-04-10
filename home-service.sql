@@ -102,7 +102,7 @@ CREATE TYPE "price_unit_type" AS ENUM (
   'hourly'
 );
 
-CREATE TABLE "user" (
+CREATE TABLE "users" (
   "id" SERIAL PRIMARY KEY,
   "user_type" user_type NOT NULL
 );
@@ -391,7 +391,7 @@ CREATE TABLE "tasker_roles" (
   PRIMARY KEY(tasker_id, role_id)
 );
 
-CREATE TABLE "notifications" (
+CREATE TABLE "notifications" ( 
   "id" SERIAL PRIMARY KEY,
   "recipient_type" recipient_type NOT NULL,
   "recipient_id" INTEGER NOT NULL,
@@ -467,25 +467,25 @@ CREATE INDEX "idx_notifications_recipient" ON "notifications" ("recipient_type",
 CREATE INDEX "idx_tasker_earnings_status" ON "tasker_earnings" ("tasker_id", "status");
 
 -- Thêm các ràng buộc khóa ngoại
-ALTER TABLE "account" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id");
+ALTER TABLE "account" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "account" ADD FOREIGN KEY ("tasker_id") REFERENCES "tasker" ("id");
-ALTER TABLE "user_verifications" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id");
+ALTER TABLE "user_verifications" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "user_verifications" ADD FOREIGN KEY ("tasker_id") REFERENCES "tasker" ("id");
-ALTER TABLE "favorite_tasker" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id");
+ALTER TABLE "favorite_tasker" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "favorite_tasker" ADD FOREIGN KEY ("tasker_id") REFERENCES "tasker" ("id");
 ALTER TABLE "favorite_tasker" ADD FOREIGN KEY ("service_id") REFERENCES "services" ("id");
 ALTER TABLE "services" ADD FOREIGN KEY ("category_id") REFERENCES "service_categories" ("id");
 ALTER TABLE "tasker_services" ADD FOREIGN KEY ("tasker_id") REFERENCES "tasker" ("id");
 ALTER TABLE "tasker_services" ADD FOREIGN KEY ("service_id") REFERENCES "services" ("id");
-ALTER TABLE "user_addresses" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id");
-ALTER TABLE "bookings" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id");
+ALTER TABLE "user_addresses" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
+ALTER TABLE "bookings" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "bookings" ADD FOREIGN KEY ("tasker_id") REFERENCES "tasker" ("id");
 ALTER TABLE "bookings" ADD FOREIGN KEY ("service_id") REFERENCES "services" ("id");
 ALTER TABLE "bookings" ADD FOREIGN KEY ("address_id") REFERENCES "user_addresses" ("id");
 ALTER TABLE "booking_status_history" ADD FOREIGN KEY ("booking_id") REFERENCES "bookings" ("id");
-ALTER TABLE "payment_methods" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id");
+ALTER TABLE "payment_methods" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "payments" ADD FOREIGN KEY ("booking_id") REFERENCES "bookings" ("id");
-ALTER TABLE "payments" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id");
+ALTER TABLE "payments" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "payments" ADD FOREIGN KEY ("tasker_id") REFERENCES "tasker" ("id");
 ALTER TABLE "payments" ADD FOREIGN KEY ("payment_method_id") REFERENCES "payment_methods" ("id");
 ALTER TABLE "tasker_earnings" ADD FOREIGN KEY ("tasker_id") REFERENCES "tasker" ("id");
@@ -493,23 +493,23 @@ ALTER TABLE "tasker_earnings" ADD FOREIGN KEY ("booking_id") REFERENCES "booking
 ALTER TABLE "tasker_payouts" ADD FOREIGN KEY ("tasker_id") REFERENCES "tasker" ("id");
 ALTER TABLE "reviews" ADD FOREIGN KEY ("booking_id") REFERENCES "bookings" ("id");
 ALTER TABLE "chat_rooms" ADD FOREIGN KEY ("booking_id") REFERENCES "bookings" ("id");
-ALTER TABLE "chat_rooms" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id");
+ALTER TABLE "chat_rooms" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "chat_rooms" ADD FOREIGN KEY ("tasker_id") REFERENCES "tasker" ("id");
 ALTER TABLE "chat_messages" ADD FOREIGN KEY ("room_id") REFERENCES "chat_rooms" ("id");
-ALTER TABLE "user_preferences" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id");
+ALTER TABLE "user_preferences" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "user_preferences" ADD FOREIGN KEY ("service_category_id") REFERENCES "service_categories" ("id");
 ALTER TABLE "tasker_unavailable_dates" ADD FOREIGN KEY ("tasker_id") REFERENCES "tasker" ("id");
-ALTER TABLE "system_settings" ADD FOREIGN KEY ("updated_by") REFERENCES "user" ("id");
+ALTER TABLE "system_settings" ADD FOREIGN KEY ("updated_by") REFERENCES "users" ("id");
 ALTER TABLE "role_permissions" ADD FOREIGN KEY ("role_id") REFERENCES "roles" ("id");
 ALTER TABLE "role_permissions" ADD FOREIGN KEY ("permission_id") REFERENCES "permissions" ("id");
-ALTER TABLE "user_roles" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id");
+ALTER TABLE "user_roles" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "user_roles" ADD FOREIGN KEY ("role_id") REFERENCES "roles" ("id");
-ALTER TABLE "user_roles" ADD FOREIGN KEY ("assigned_by") REFERENCES "user" ("id");
+ALTER TABLE "user_roles" ADD FOREIGN KEY ("assigned_by") REFERENCES "users" ("id");
 ALTER TABLE "tasker_roles" ADD FOREIGN KEY ("tasker_id") REFERENCES "tasker" ("id");
 ALTER TABLE "tasker_roles" ADD FOREIGN KEY ("role_id") REFERENCES "roles" ("id");
-ALTER TABLE "tasker_roles" ADD FOREIGN KEY ("assigned_by") REFERENCES "user" ("id");
-ALTER TABLE "recommendation_logs" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id");
+ALTER TABLE "tasker_roles" ADD FOREIGN KEY ("assigned_by") REFERENCES "users" ("id");
+ALTER TABLE "recommendation_logs" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "recommendation_logs" ADD FOREIGN KEY ("service_id") REFERENCES "services" ("id");
 ALTER TABLE "recommendation_logs" ADD FOREIGN KEY ("tasker_id") REFERENCES "tasker" ("id");
 ALTER TABLE "recommendation_logs" ADD FOREIGN KEY ("booking_id") REFERENCES "bookings" ("id");
-ALTER TABLE "chatbot_interactions" ADD FOREIGN KEY ("user_id") REFERENCES "user" ("id");
+ALTER TABLE "chatbot_interactions" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");

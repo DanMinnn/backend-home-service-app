@@ -16,6 +16,19 @@ spring:
     hibernate:
       ddl-auto: none
 
+  # Redis spring.data.redis.host
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  #Sendgrid
+  sendgrid:
+    api-key: ${SENDGRID_API_KEY}
+    fromEmail: ${SENDGRID_FROM_EMAIL}
+    templateId: ${SENDGRID_TEMPLATE_ID}
+    verificationLink: http://localhost:8080/register/confirm-email
+
 springdoc:
   api-docs:
     enabled: true
@@ -30,3 +43,4 @@ openapi:
 
 jwt:
     secretKey: dev-env@123
+  
