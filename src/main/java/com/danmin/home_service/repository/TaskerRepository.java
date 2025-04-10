@@ -7,5 +7,5 @@ import com.danmin.home_service.model.Tasker;
 
 @Repository
 public interface TaskerRepository extends JpaRepository<Tasker, Long> {
-
+    public Tasker findByEmail(String email);
 }

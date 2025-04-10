@@ -1,17 +1,19 @@
 
 CREATE EXTENSION IF NOT EXISTS cube;
-CREATE EXTENSION IF NOT EXISTS earthdistance;
-
+CREATE EXTENSION IF NOT EXISTS earthdistance;	
+CREATE EXTENSION IF NOT EXISTS postgis
 --SELECT * FROM pg_available_extensions WHERE name IN ('cube', 'earthdistance');
 --
 --SELECT ll_to_earth(10.762622, 106.660172);
-
+--
 --DROP SCHEMA public CASCADE;
 --CREATE SCHEMA public;
 --GRANT ALL ON SCHEMA public TO postgres;
 --GRANT ALL ON SCHEMA public TO public;
 
 --SELECT current_database();
+
+
 -- Định nghĩa các kiểu enum
 CREATE TYPE "method_type" AS ENUM (
   'credit_card',
@@ -36,7 +38,6 @@ CREATE TYPE "verification_type" AS ENUM (
 
 CREATE TYPE "user_type" AS ENUM (
   'customer',
-  'tasker',
   'admin'
 );
 
@@ -104,39 +105,48 @@ CREATE TYPE "price_unit_type" AS ENUM (
 
 CREATE TABLE "users" (
   "id" SERIAL PRIMARY KEY,
-  "user_type" user_type NOT NULL
-);
-
-CREATE TABLE "tasker" (
-  "id" SERIAL PRIMARY KEY,
-  "earth_location" earth,
-  "latitude" DECIMAL(10,8),
-  "longitude" DECIMAL(11,8),
-  "average_rating" DECIMAL(3,2) DEFAULT 0,
-  "total_earnings" DECIMAL(10,2) DEFAULT 0,
-  "availability_status" availability_status NOT NULL
-);
-
-CREATE TABLE "account" (
-  "id" SERIAL PRIMARY KEY,
-  "user_id" integer,
-  "tasker_id" integer,
   "email" varchar(255) NOT NULL,
   "phone_number" varchar(15) NOT NULL,
   "password_hash" VARCHAR(255) NOT NULL,
-  "first_name" VARCHAR(100) NOT NULL,
-  "last_name" VARCHAR(100) NOT NULL,
+  "first_last_name" VARCHAR(100) NOT NULL,
   "profile_image" VARCHAR(255),
   "address" TEXT,
+  "user_type" user_type NOT null,
   "created_at" timestamp(6) DEFAULT now() NULL,
   "updated_at" timestamp(6) DEFAULT now() NULL,
   "last_login" TIMESTAMP,
   "is_verified" BOOLEAN DEFAULT false,
   "is_active" BOOLEAN DEFAULT true,
-  UNIQUE(email),
-  UNIQUE(phone_number),
-  CONSTRAINT "account_user_or_tasker_check" CHECK ((user_id IS NULL AND tasker_id IS NOT NULL) OR (user_id IS NOT NULL AND tasker_id IS NULL))
+   UNIQUE(email, phone_number)
 );
+
+CREATE TABLE "tasker" (
+  "id" SERIAL PRIMARY KEY,
+  "email" varchar(255) NOT NULL,
+  "phone_number" varchar(15) NOT NULL,
+  "password_hash" VARCHAR(255) NOT NULL,
+  "first_last_name" VARCHAR(100) NOT NULL,
+  "profile_image" VARCHAR(255),
+  "address" TEXT,
+   "earth_location" geometry(Point, 4326),
+  "latitude" DECIMAL(10,8),
+  "longitude" DECIMAL(11,8),
+  "average_rating" DECIMAL(3,2) DEFAULT 0,
+  "total_earnings" DECIMAL(10,2) DEFAULT 0,
+  "availability_status" availability_status NOT null,
+  "created_at" timestamp(6) DEFAULT now() NULL,
+  "updated_at" timestamp(6) DEFAULT now() NULL,
+  "last_login" TIMESTAMP,
+  "is_verified" BOOLEAN DEFAULT false,
+  "is_active" BOOLEAN DEFAULT true,
+  
+  UNIQUE(email, phone_number)
+);
+
+--ALTER TABLE tasker 
+--ALTER COLUMN earth_location TYPE geometry(Point, 4326) 
+--USING ST_SetSRID(ST_MakePoint(longitude, latitude), 4326);
+
 
 CREATE TABLE "user_verifications" (
   "id" SERIAL PRIMARY KEY,
@@ -391,7 +401,7 @@ CREATE TABLE "tasker_roles" (
   PRIMARY KEY(tasker_id, role_id)
 );
 
-CREATE TABLE "notifications" ( 
+CREATE TABLE "notifications" (
   "id" SERIAL PRIMARY KEY,
   "recipient_type" recipient_type NOT NULL,
   "recipient_id" INTEGER NOT NULL,
@@ -439,8 +449,6 @@ CREATE INDEX "idx_bookings_schedule" ON "bookings" ("scheduled_date", "scheduled
 CREATE INDEX "idx_bookings_status" ON "bookings" ("status");
 
 -- Index cho khóa ngoại phổ biến
-CREATE INDEX "idx_account_user_id" ON "account" ("user_id");
-CREATE INDEX "idx_account_tasker_id" ON "account" ("tasker_id");
 CREATE INDEX "idx_tasker_services_tasker_id" ON "tasker_services" ("tasker_id");
 CREATE INDEX "idx_tasker_services_service_id" ON "tasker_services" ("service_id");
 CREATE INDEX "idx_bookings_user_id" ON "bookings" ("user_id");
@@ -467,8 +475,6 @@ CREATE INDEX "idx_notifications_recipient" ON "notifications" ("recipient_type",
 CREATE INDEX "idx_tasker_earnings_status" ON "tasker_earnings" ("tasker_id", "status");
 
 -- Thêm các ràng buộc khóa ngoại
-ALTER TABLE "account" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
-ALTER TABLE "account" ADD FOREIGN KEY ("tasker_id") REFERENCES "tasker" ("id");
 ALTER TABLE "user_verifications" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "user_verifications" ADD FOREIGN KEY ("tasker_id") REFERENCES "tasker" ("id");
 ALTER TABLE "favorite_tasker" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");

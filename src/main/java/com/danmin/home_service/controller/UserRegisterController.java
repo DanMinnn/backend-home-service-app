@@ -10,13 +10,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.danmin.home_service.dto.request.RegisterRequestDTO;
+import com.danmin.home_service.dto.request.UserRegisterDTO;
 import com.danmin.home_service.dto.response.ResponseData;
 import com.danmin.home_service.dto.response.ResponseError;
-import com.danmin.home_service.exception.ResourceNotFoundException;
 import com.danmin.home_service.service.EmailService;
 import com.danmin.home_service.service.RedisService;
-import com.danmin.home_service.service.RegistrationService;
+import com.danmin.home_service.service.user.UserRegisterService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -26,21 +25,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
-@RequestMapping("/register")
-@Tag(name = "Register Controller")
+@RequestMapping("/register/user")
+@Tag(name = "User Register Controller")
 @RequiredArgsConstructor
 @Slf4j
 @Validated
-public class RegisterController {
+public class UserRegisterController {
 
-    private final RegistrationService registrationService;
+    private final UserRegisterService userRegisterService;
     private final RedisService redisService;
     private final EmailService emailService;
 
     @PostMapping("/")
-    public String addUser(@Valid @RequestBody RegisterRequestDTO req) throws IOException {
+    public String addUser(@Valid @RequestBody UserRegisterDTO req) throws IOException {
 
-        log.info("Request add user " + req.getFirstName());
+        log.info("Request add user " + req.getFirstLastName());
 
         try {
             // save reg into Redis
@@ -62,7 +61,7 @@ public class RegisterController {
         log.info("Confirm email: {}", secretCode);
 
         try {
-            // TODO check secretCode from Redis
+            // check secretCode from Redis
             String key = redisService.getSecretCode("secretCode");
 
             if (key == null) {
@@ -70,9 +69,9 @@ public class RegisterController {
             }
 
             // save user
-            RegisterRequestDTO req = redisService.get("REGISTER::", RegisterRequestDTO.class);
+            UserRegisterDTO req = redisService.get("REGISTER::", UserRegisterDTO.class);
             req.setVerify(true);
-            long userId = registrationService.saveUserOrTasker(req);
+            long userId = userRegisterService.saveUser(req);
 
             redisService.delete("secretCode");
             redisService.delete("REGISTER::");
@@ -80,7 +79,7 @@ public class RegisterController {
             return new ResponseData<>(HttpStatus.OK.value(), "Save successfully", userId);
         } catch (Exception e) {
             log.error("Confirm email was failed!, errorMessage={}", e.getMessage());
-            return new ResponseData<>(HttpStatus.BAD_REQUEST.value(), "Save failed");
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Save failed");
         } finally {
             response.sendRedirect("https://tayjava.vn/wp-admin");
         }

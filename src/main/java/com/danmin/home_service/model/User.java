@@ -14,26 +14,22 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@SuperBuilder
 @Entity
-@Table(name = "users")
-public class User extends AbstractEntityNoDate<Integer> {
+@Table(name = "users", uniqueConstraints = { @UniqueConstraint(columnNames = "email, phone_number") })
+public class User extends AbstractUser<Integer> {
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "user_type")
     private UserType userType;
-
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
-    private Account account;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private Set<UserVerifications> userVerifications = new HashSet<>();

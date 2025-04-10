@@ -1,8 +1,11 @@
 package com.danmin.home_service.dto.request;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
-import com.danmin.home_service.common.UserType;
+import org.locationtech.jts.geom.Point;
+
+import com.danmin.home_service.common.AvailabilityStatus;
 import com.danmin.home_service.dto.validator.EnumPattern;
 
 import jakarta.validation.constraints.Email;
@@ -13,13 +16,10 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class RegisterRequestDTO implements Serializable {
+public class TaskerRegisterDTO implements Serializable {
 
-    @NotNull(message = "Firstname must be not blank")
-    private String firstName;
-
-    @NotNull(message = "Lastname must be not blank")
-    private String lastName;
+    @NotNull(message = "Firstname and lastname must be not blank")
+    private String firstLastName;
 
     @Pattern(regexp = "^\\d{10}$", message = "Phone number invalid format")
     private String phoneNumber;
@@ -32,7 +32,15 @@ public class RegisterRequestDTO implements Serializable {
 
     private boolean isVerify;
 
+    private BigDecimal longitude;
+
+    private BigDecimal latitude;
+
+    private Double average_rating;
+
+    private Double total_earnings;
+
     @NotNull(message = "type must be not null")
-    @EnumPattern(name = "status", regexp = "customer|tasker|admin")
-    private UserType type;
+    @EnumPattern(name = "status", regexp = "available|busy|offline")
+    private AvailabilityStatus status;
 }
