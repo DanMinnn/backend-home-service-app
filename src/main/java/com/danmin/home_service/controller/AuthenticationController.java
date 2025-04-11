@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.danmin.home_service.dto.request.SignInRequest;
 import com.danmin.home_service.dto.response.TokenResponse;
+import com.danmin.home_service.service.AuthenticationService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,11 +22,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 @Tag(name = "Authentication Controller")
 public class AuthenticationController {
 
+    private final AuthenticationService authenticationService;
+
     @Operation(summary = "Access token", description = "Get access token and refresh token by email and password")
     @PostMapping("/access-token")
     public TokenResponse getAccessToken(@RequestBody SignInRequest request) {
         log.info("Request get access token {}", request.getEmail());
-        return TokenResponse.builder().accessToken("ACCESS-TOKEN").refreshToken("REFRESH-TOKEN").build();
+        // return
+        // TokenResponse.builder().accessToken("ACCESS-TOKEN").refreshToken("REFRESH-TOKEN").build();
+        return authenticationService.getAccessToken(request);
     }
 
     @Operation(summary = "Refresh token", description = "Get new access token by refresh token")

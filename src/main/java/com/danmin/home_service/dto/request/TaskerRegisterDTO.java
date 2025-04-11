@@ -3,8 +3,6 @@ package com.danmin.home_service.dto.request;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
-import org.locationtech.jts.geom.Point;
-
 import com.danmin.home_service.common.AvailabilityStatus;
 import com.danmin.home_service.dto.validator.EnumPattern;
 

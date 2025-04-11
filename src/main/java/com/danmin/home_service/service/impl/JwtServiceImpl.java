@@ -1,0 +1,120 @@
+package com.danmin.home_service.service.impl;
+
+import java.security.Key;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.stereotype.Service;
+
+import com.danmin.home_service.common.TokenType;
+import com.danmin.home_service.exception.InvalidDataException;
+import com.danmin.home_service.service.JwtService;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
+
+@Service
+@Slf4j(topic = "JWT-SERVICE")
+public class JwtServiceImpl implements JwtService {
+
+    @Value("${jwt.access-key}")
+    private String accessKey;
+
+    @Value("${jwt.expiration}")
+    private long expiredTime;
+
+    @Value("${jwt.refresh-token}")
+    private String refreshToken;
+
+    @Override
+    public String generateAccessToken(long userId, String email, Collection<? extends GrantedAuthority> authorities) {
+        log.info("Generating access token for userId: {} with authorities: {}", userId, authorities);
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
+        claims.put("roles", authorities);
+
+        return generateAccessToken(claims, email);
+    }
+
+    @Override
+    public String generateRefreshToken(long userId, String email, Collection<? extends GrantedAuthority> authorities) {
+        log.info("Generating refresh token for userId: {} with authorities: {}", userId, authorities);
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
+        claims.put("roles", authorities);
+
+        return generateRefreshToken(claims, email);
+    }
+
+    @Override
+    public String extractEmail(String token, TokenType tokenType) {
+        log.info("Extracting email from token: {} of type: {}", token, tokenType);
+
+        return extractClaim(token, Claims::getSubject, tokenType);
+    }
+
+    private <T> T extractClaim(String token, Function<Claims, T> claimsResolver, TokenType tokenType) {
+        log.info("Extracting claim from token: {} of type: {}", token, tokenType);
+
+        final Claims claims = extractAllClaims(token, tokenType);
+        return claimsResolver.apply(claims);
+    }
+
+    private Claims extractAllClaims(String token, TokenType tokenType) {
+        try {
+            return Jwts.parser().setSigningKey(getKey(tokenType)).build().parseClaimsJws(token).getBody();
+        } catch (ExpiredJwtException e) {
+            throw new InvalidDataException("Invalid token: " + e.getMessage(), e);
+        }
+    }
+
+    private String generateAccessToken(Map<String, Object> claims, String email) {
+        log.info("Generate access token for user {} with email", email, claims);
+
+        return Jwts.builder()
+                .claims(claims)
+                .subject(email)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 + expiredTime)) // 10 hours
+                .signWith(getKey(TokenType.ACCESS_TOKEN), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    private String generateRefreshToken(Map<String, Object> claims, String email) {
+        log.info("Generate refresh token for user {} with email", email, claims);
+
+        return Jwts.builder()
+                .claims(claims)
+                .subject(email)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 + expiredTime)) // 10 hours
+                .signWith(getKey(TokenType.REFRESH_TOKEN), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    private Key getKey(TokenType tokenType) {
+
+        switch (tokenType) {
+            case ACCESS_TOKEN -> {
+                return Keys.hmacShaKeyFor(Decoders.BASE64.decode(accessKey));
+            }
+            case REFRESH_TOKEN -> {
+                return Keys.hmacShaKeyFor(Decoders.BASE64.decode(refreshToken));
+            }
+            default -> throw new InvalidDataException("Invalid token type: " + tokenType);
+        }
+    }
+
+}

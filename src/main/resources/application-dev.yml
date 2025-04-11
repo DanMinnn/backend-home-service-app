@@ -42,5 +42,7 @@ openapi:
     version: 1.0.0
 
 jwt:
-    secretKey: dev-env@123
+  access-key: ${JWT_ACCESS_KEY}
+  expiration: ${JWT_EXPIRATION}
+  refresh-token: ${JWT_REFRESH_KEY}
   

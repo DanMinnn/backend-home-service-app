@@ -3,6 +3,7 @@ package com.danmin.home_service.exception;
 import java.util.Date;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -59,6 +60,38 @@ public class GlobalExceptionHandler {
             errorResponse.setError("Invalid Data");
             errorResponse.setMessage(message);
         }
+
+        return errorResponse;
+    }
+
+    /**
+     * Handle exception when the request not found data
+     *
+     * @param e
+     * @param request
+     * @return
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "403", description = "FORBIDDEN", content = {
+                    @Content(mediaType = APPLICATION_JSON_VALUE, examples = @ExampleObject(name = "403 Response", summary = "Handle exception when forbidden", value = """
+                            {
+                              "timestamp": "2023-10-19T06:07:35.321+00:00",
+                              "status": 403,
+                              "path": "/api/v1/...",
+                              "error": "Forbidden",
+                              "message": "{data} is forbidden"
+                            }
+                            """)) })
+    })
+    public ErrorResponse handleAccessDeniedException(ResourceNotFoundException e, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setTimestamp(new Date());
+        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+        errorResponse.setStatus(HttpStatus.FORBIDDEN.value());
+        errorResponse.setError(HttpStatus.FORBIDDEN.getReasonPhrase());
+        errorResponse.setMessage(e.getMessage());
 
         return errorResponse;
     }
