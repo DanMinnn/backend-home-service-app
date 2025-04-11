@@ -42,7 +42,7 @@ public class EmailService {
      * @param to
      * @throws IOException
      */
-    public void sendEmailVerification(String to) throws IOException {
+    public void sendEmailVerification(String to, String userType) throws IOException {
         log.info("Email verification started");
 
         Email fromEmail = new Email(from, "Home Service");
@@ -55,11 +55,11 @@ public class EmailService {
         String secretCode = String.format("?secretCode=%s", value);
 
         // TODO generate secretCode and save to redis
-        redisService.save("secretCode", value, 24);
+        redisService.save(userType, value, 24);
 
         // definition template
         Map<String, String> map = new HashMap<>();
-        map.put("verification_link", verificationLink + secretCode);
+        map.put("verification_link", verificationLink + secretCode + "&userType=" + userType);
 
         Mail mail = new Mail();
         mail.setFrom(fromEmail);
