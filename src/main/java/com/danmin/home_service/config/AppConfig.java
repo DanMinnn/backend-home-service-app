@@ -39,7 +39,7 @@ public class AppConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
-                        request -> request.requestMatchers("/auth/**").permitAll().anyRequest().authenticated())
+                        request -> request.requestMatchers("/**").permitAll().anyRequest().authenticated())
                 .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(requestFilter, UsernamePasswordAuthenticationFilter.class);
@@ -53,7 +53,8 @@ public class AppConfig {
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (webSecurity) -> webSecurity
                 .ignoring()
-                .requestMatchers("/api-docs/**", "/swagger-ui/**");
+                .requestMatchers("/actuator/**", "/v3/**", "/webjars/**", "/swagger-ui*/*swagger-initializer.js",
+                        "/swagger-ui*/**");
     }
 
     // config for CORS
