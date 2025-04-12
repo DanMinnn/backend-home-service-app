@@ -9,6 +9,7 @@ import com.danmin.home_service.service.AuthenticationService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,7 +27,7 @@ public class AuthenticationController {
 
     @Operation(summary = "Access token", description = "Get access token and refresh token by email and password")
     @PostMapping("/access-token")
-    public TokenResponse getAccessToken(@RequestBody SignInRequest request) {
+    public TokenResponse getAccessToken(@Valid @RequestBody SignInRequest request) {
         log.info("Request get access token {}", request.getEmail());
         // return
         // TokenResponse.builder().accessToken("ACCESS-TOKEN").refreshToken("REFRESH-TOKEN").build();
@@ -35,9 +36,9 @@ public class AuthenticationController {
 
     @Operation(summary = "Refresh token", description = "Get new access token by refresh token")
     @PostMapping("/refresh-token")
-    public TokenResponse getRefreshToken(@RequestBody String refreshToken) {
+    public TokenResponse getRefreshToken(@Valid @RequestBody String refreshToken) {
         log.info("Request refresh token");
-        return TokenResponse.builder().accessToken("NEW-ACCESS-TOKEN").refreshToken("NEW-REFRESH-TOKEN").build();
+        return authenticationService.getRefreshToken(refreshToken);
     }
 
 }

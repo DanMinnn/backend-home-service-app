@@ -8,11 +8,12 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.danmin.home_service.common.TokenType;
 import com.danmin.home_service.dto.request.SignInRequest;
 import com.danmin.home_service.dto.response.TokenResponse;
-import com.danmin.home_service.repository.UserRepository;
 import com.danmin.home_service.service.AuthenticationService;
 import com.danmin.home_service.service.JwtService;
+import com.danmin.home_service.service.UserTypeService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j(topic = "AUTHENTICATION-SERVICE")
 public class AuthenticationServiceImpl implements AuthenticationService {
 
-    private final UserRepository userRepository;
+    private final UserTypeService userTypeService;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
 
@@ -41,7 +42,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new AccessDeniedException(e.getMessage());
         }
 
-        var user = userRepository.findByEmail(request.getEmail());
+        // var user = userDetailService.loadUserByUsername(request.getEmail());
+
+        var user = userTypeService.findByEmail(request.getEmail())
+                .orElseThrow(() -> new AccessDeniedException("User not found with username: " + request.getEmail()));
 
         // check if authentication is successful
         String accessToken = jwtService.generateAccessToken(user.getId(), request.getEmail(), user.getAuthorities());
@@ -55,8 +59,36 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public TokenResponse getRefreshToken(String request) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getRefreshToken'");
+        log.info("Request refresh token");
+
+        // check if refresh token is valid
+        if (request == null || request.isEmpty()) {
+            throw new AccessDeniedException("Refresh token is missing");
+        }
+
+        String email = jwtService.extractEmail(request, TokenType.REFRESH_TOKEN);
+        if (email == null || email.isEmpty()) {
+            throw new AccessDeniedException("Invalid refresh token");
+        }
+
+        // check if user exists in the database
+        var user = userTypeService.findByEmail(email)
+                .orElseThrow(() -> new AccessDeniedException("User not found with email: " + email));
+
+        // check if refresh token is valid
+        if (!jwtService.isValid(request, TokenType.REFRESH_TOKEN, user)) {
+            throw new AccessDeniedException("Invalid refresh token");
+        }
+
+        // check if authentication is successful
+        String accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail(), user.getAuthorities());
+
+        String refreshToken = jwtService.generateRefreshToken(user.getId(), user.getEmail(), user.getAuthorities());
+
+        return TokenResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
     }
 
 }

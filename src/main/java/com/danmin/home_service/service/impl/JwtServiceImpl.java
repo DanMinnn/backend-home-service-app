@@ -9,6 +9,7 @@ import java.util.function.Function;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import com.danmin.home_service.common.TokenType;
@@ -115,6 +116,20 @@ public class JwtServiceImpl implements JwtService {
             }
             default -> throw new InvalidDataException("Invalid token type: " + tokenType);
         }
+    }
+
+    @Override
+    public Boolean isValid(String token, TokenType tokenType, UserDetails userDetails) {
+        final String email = extractEmail(token, tokenType);
+        return (email.equals(userDetails.getUsername()) && !isTokenExpired(token, tokenType));
+    }
+
+    private Boolean isTokenExpired(String token, TokenType tokenType) {
+        return extractExpiration(token, tokenType).before(new Date());
+    }
+
+    private Date extractExpiration(String token, TokenType tokenType) {
+        return extractClaim(token, Claims::getExpiration, tokenType);
     }
 
 }
