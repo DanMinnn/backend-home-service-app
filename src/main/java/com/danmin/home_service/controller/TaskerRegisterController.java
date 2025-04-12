@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.danmin.home_service.dto.request.TaskerRegisterDTO;
 import com.danmin.home_service.model.Tasker;
+import com.danmin.home_service.repository.TaskerRepository;
+import com.danmin.home_service.repository.UserRepository;
 import com.danmin.home_service.service.EmailService;
 import com.danmin.home_service.service.RedisService;
 import com.danmin.home_service.service.RegistrationService;
@@ -22,9 +24,11 @@ public class TaskerRegisterController extends RegistrationController<Tasker, Tas
     public TaskerRegisterController(
             RedisService redisService,
             EmailService emailService,
-            RegistrationService registrationService) {
+            RegistrationService registrationService,
+            UserRepository userRepository,
+            TaskerRepository taskerRepository) {
         super(redisService, emailService, registrationService,
-                Tasker.class, "TASKER", "https://tayjava.vn/tasker-dashboard");
+                Tasker.class, "TASKER", "https://tayjava.vn/tasker-dashboard", userRepository, taskerRepository);
     }
 
     // private final TaskerRegistrationService taskerRegistrationService;

@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.danmin.home_service.dto.request.UserRegisterDTO;
 import com.danmin.home_service.model.User;
+import com.danmin.home_service.repository.TaskerRepository;
+import com.danmin.home_service.repository.UserRepository;
 import com.danmin.home_service.service.EmailService;
 import com.danmin.home_service.service.RedisService;
 import com.danmin.home_service.service.RegistrationService;
@@ -22,9 +24,11 @@ public class UserRegisterController extends RegistrationController<User, UserReg
     public UserRegisterController(
             RedisService redisService,
             EmailService emailService,
-            RegistrationService registrationService) {
+            RegistrationService registrationService,
+            UserRepository userRepository,
+            TaskerRepository taskerRepository) {
         super(redisService, emailService, registrationService,
-                User.class, "USER", "https://tayjava.vn/wp-admin");
+                User.class, "USER", "https://tayjava.vn/wp-admin", userRepository, taskerRepository);
     }
 
     // private final UserRegisterService userRegisterService;
