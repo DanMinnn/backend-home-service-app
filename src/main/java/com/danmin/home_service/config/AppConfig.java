@@ -18,7 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import com.danmin.home_service.service.user.UserDetailService;
+import com.danmin.home_service.service.UserDetailService;
 import com.sendgrid.SendGrid;
 
 import lombok.RequiredArgsConstructor;
@@ -82,7 +82,7 @@ public class AppConfig {
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService.userDetailsService());
+        authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(getPasswordEncoder());
         return authProvider;
     }

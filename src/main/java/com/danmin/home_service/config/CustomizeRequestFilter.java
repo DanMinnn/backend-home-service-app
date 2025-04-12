@@ -14,7 +14,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.danmin.home_service.common.TokenType;
 import com.danmin.home_service.service.JwtService;
-import com.danmin.home_service.service.user.UserDetailService;
+import com.danmin.home_service.service.UserDetailService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -60,7 +60,7 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
                 return;
             }
 
-            UserDetails userDetails = userDetailService.userDetailsService().loadUserByUsername(email);
+            UserDetails userDetails = userDetailService.loadUserByUsername(email);
 
             SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(

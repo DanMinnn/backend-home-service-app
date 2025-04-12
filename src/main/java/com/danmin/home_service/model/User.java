@@ -1,15 +1,15 @@
 package com.danmin.home_service.model;
 
-import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import com.danmin.home_service.common.UserType;
 
 import jakarta.persistence.Column;
@@ -26,9 +26,11 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @Setter
 @SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "users", uniqueConstraints = { @UniqueConstraint(columnNames = "email, phone_number") })
-public class User extends AbstractUser<Integer> implements UserDetails, Serializable {
+public class User extends AbstractUser<Integer> implements BaseUser {
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
@@ -39,20 +41,22 @@ public class User extends AbstractUser<Integer> implements UserDetails, Serializ
     private Set<UserVerifications> userVerifications = new HashSet<>();
 
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getAuthorities'");
-    }
-
-    @Override
     public String getPassword() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getPassword'");
+        return super.getPasswordHash();
     }
 
     @Override
     public String getUsername() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getUsername'");
+        return super.getEmail();
     }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        if (userType != null) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + userType.name()));
+        }
+        return authorities;
+    }
+
 }

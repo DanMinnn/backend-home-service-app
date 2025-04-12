@@ -1,12 +1,14 @@
 package com.danmin.home_service.model;
 
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.locationtech.jts.geom.Point;
+import org.springframework.security.core.GrantedAuthority;
 
 import com.danmin.home_service.common.AvailabilityStatus;
 
@@ -23,10 +25,12 @@ import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @SuperBuilder
 @Entity
 @Table(name = "tasker", uniqueConstraints = { @UniqueConstraint(columnNames = "email, phone_number") })
-public class Tasker extends AbstractUser<Integer> {
+public class Tasker extends AbstractUser<Integer> implements BaseUser {
 
     @Column(name = "earth_location", columnDefinition = "geometry(Point,4326)")
     private Point earthLocation;
@@ -50,5 +54,23 @@ public class Tasker extends AbstractUser<Integer> {
 
     @OneToMany(mappedBy = "tasker", fetch = FetchType.LAZY)
     private Set<UserVerifications> userVerifications = new HashSet<>();
+
+    @Override
+    public String getPassword() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getPassword'");
+    }
+
+    @Override
+    public String getUsername() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getUsername'");
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getAuthorities'");
+    }
 
 }
