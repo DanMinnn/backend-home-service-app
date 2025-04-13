@@ -37,6 +37,9 @@ public class JwtServiceImpl implements JwtService {
     @Value("${jwt.refresh-token}")
     private String refreshToken;
 
+    @Value("${jwt.reset-key}")
+    private String resetKey;
+
     @Override
     public String generateAccessToken(long userId, String email, Collection<? extends GrantedAuthority> authorities) {
         log.info("Generating access token for userId: {} with authorities: {}", userId, authorities);
@@ -57,6 +60,11 @@ public class JwtServiceImpl implements JwtService {
         claims.put("roles", authorities);
 
         return generateRefreshToken(claims, email);
+    }
+
+    @Override
+    public String generateResetToken(UserDetails user) {
+        return generateResetToken(new HashMap<>(), user);
     }
 
     @Override
@@ -88,7 +96,7 @@ public class JwtServiceImpl implements JwtService {
                 .claims(claims)
                 .subject(email)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 + expiredTime)) // 10 hours
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * expiredTime)) // 10 minutes
                 .signWith(getKey(TokenType.ACCESS_TOKEN), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -100,8 +108,20 @@ public class JwtServiceImpl implements JwtService {
                 .claims(claims)
                 .subject(email)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 + expiredTime)) // 10 hours
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * expiredTime)) // 10 hours
                 .signWith(getKey(TokenType.REFRESH_TOKEN), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String generateResetToken(Map<String, Object> claims, UserDetails user) {
+        log.info("Generate reset token for user {} with email", user.getUsername(), claims);
+
+        return Jwts.builder()
+                .claims(claims)
+                .subject(user.getUsername())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 5)) // 70 seconds
+                .signWith(getKey(TokenType.RESET_TOKEN), SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -113,6 +133,9 @@ public class JwtServiceImpl implements JwtService {
             }
             case REFRESH_TOKEN -> {
                 return Keys.hmacShaKeyFor(Decoders.BASE64.decode(refreshToken));
+            }
+            case RESET_TOKEN -> {
+                return Keys.hmacShaKeyFor(Decoders.BASE64.decode(resetKey));
             }
             default -> throw new InvalidDataException("Invalid token type: " + tokenType);
         }

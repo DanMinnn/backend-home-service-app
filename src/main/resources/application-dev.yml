@@ -15,6 +15,9 @@ spring:
     show-sql: false
     hibernate:
       ddl-auto: none
+    generate-ddl: false
+    open-in-view: false
+    properties.hibernate.cache.use_second_level_cache: false
 
   # Redis spring.data.redis.host
   data:
@@ -27,7 +30,9 @@ spring:
     api-key: ${SENDGRID_API_KEY}
     fromEmail: ${SENDGRID_FROM_EMAIL}
     templateId: ${SENDGRID_TEMPLATE_ID}
+    templateIdChangePassword: ${SENDGRID_TEMPLATE_ID_CHANGE_PASSWORD}
     verificationLink: http://localhost:8080/register/confirm-email
+    changePasswordLink: http://localhost:8080/auth/reset-password
 
 springdoc:
   api-docs:
@@ -45,4 +50,5 @@ jwt:
   access-key: ${JWT_ACCESS_KEY}
   expiration: ${JWT_EXPIRATION}
   refresh-token: ${JWT_REFRESH_KEY}
+  reset-key: ${JWT_RESET_KEY}
   

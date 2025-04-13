@@ -1,17 +1,25 @@
 package com.danmin.home_service.service.impl;
 
+import java.io.IOException;
+
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.danmin.home_service.common.TokenType;
+import com.danmin.home_service.dto.request.ChangePasswordDTO;
 import com.danmin.home_service.dto.request.SignInRequest;
 import com.danmin.home_service.dto.response.TokenResponse;
+import com.danmin.home_service.exception.InvalidDataException;
+import com.danmin.home_service.model.User;
+import com.danmin.home_service.repository.UserRepository;
 import com.danmin.home_service.service.AuthenticationService;
+import com.danmin.home_service.service.EmailService;
 import com.danmin.home_service.service.JwtService;
 import com.danmin.home_service.service.UserTypeService;
 
@@ -26,6 +34,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserTypeService userTypeService;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
 
     @Override
     public TokenResponse getAccessToken(SignInRequest request) {
@@ -89,6 +100,73 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
+    }
+
+    @Override
+    public String forgotPassword(String email) {
+        // check if user exists in the database
+        var user = userTypeService.findByEmail(email)
+                .orElseThrow(() -> new AccessDeniedException("User not found with email: " +
+                        email));
+
+        // implement...
+        if (!user.isEnabled()) {
+            throw new InvalidDataException("User is not active");
+        }
+
+        // generate reset toke
+        String resetToken = jwtService.generateResetToken(user);
+
+        // send email confirm link
+        try {
+            emailService.sendEmailForgotPassword(email, resetToken);
+        } catch (IOException e) {
+            log.info("Error send change password link, message={}", e.getMessage());
+        }
+
+        return "Sent to your email";
+    }
+
+    @Override
+    public String resetPassword(String key) {
+        log.info("--------- reset password ---------");
+
+        final String email = jwtService.extractEmail(key, TokenType.RESET_TOKEN);
+
+        var user = userTypeService.findByEmail(email)
+                .orElseThrow(() -> new AccessDeniedException("User not found with email: " + email));
+
+        if (!jwtService.isValid(key, TokenType.RESET_TOKEN, user)) {
+            throw new InvalidDataException("Not allow access with this token");
+        }
+
+        return "Account is verified !";
+    }
+
+    @Override
+    public String changePassword(ChangePasswordDTO request) {
+        log.info("--------- reset password ---------");
+
+        final String email = jwtService.extractEmail(request.getSecretKey(), TokenType.RESET_TOKEN);
+
+        User user = (User) userTypeService.findByEmail(email)
+                .orElseThrow(() -> new AccessDeniedException("User not found with email: " + email));
+
+        if (!user.isEnabled()) {
+            throw new InvalidDataException("user is not active");
+        }
+
+        if (!jwtService.isValid(request.getSecretKey(), TokenType.RESET_TOKEN, user)) {
+            throw new InvalidDataException("Not allow access with this token");
+        }
+
+        if (!request.getPassword().equals(request.getConfirmPassword())) {
+            throw new InvalidDataException("Password not match");
+        }
+        // encrypt password before save in db
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        userRepository.save(user);
+        return "Changed";
     }
 
 }

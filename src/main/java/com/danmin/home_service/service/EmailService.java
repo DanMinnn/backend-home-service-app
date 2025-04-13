@@ -36,6 +36,12 @@ public class EmailService {
     @Value("${spring.sendgrid.verificationLink}")
     private String verificationLink;
 
+    @Value("${spring.sendgrid.changePasswordLink}")
+    private String changePasswordLink;
+
+    @Value("${spring.sendgrid.templateIdChangePassword}")
+    private String templateIdChangePassword;
+
     /**
      * Email verification by SendGrid
      * 
@@ -84,6 +90,53 @@ public class EmailService {
             log.info("Email sent successfully !");
         } else {
             log.info("Email sent failed");
+            log.info("status code = {}", response.getStatusCode());
+        }
+    }
+
+    /**
+     * Send email confirm link - forgot password
+     * 
+     * @param to
+     * @throws IOException
+     */
+    public void sendEmailForgotPassword(String to, String resetToken) throws IOException {
+        log.info("Email confirm link started");
+
+        Email fromEmail = new Email(from, "Home Service");
+        Email toEmail = new Email(to);
+
+        String subject = "Password Reset Request";
+
+        String data = String.format("?data=%s", resetToken);
+
+        // definition template
+        Map<String, String> map = new HashMap<>();
+        map.put("change_password_link", changePasswordLink + data);
+
+        Mail mail = new Mail();
+        mail.setFrom(fromEmail);
+        mail.setSubject(subject);
+
+        Personalization personalization = new Personalization();
+        personalization.addTo(toEmail);
+
+        // add to dynamic data
+        map.forEach(personalization::addDynamicTemplateData);
+
+        mail.addPersonalization(personalization);
+        mail.setTemplateId(templateIdChangePassword);
+
+        Request request = new Request();
+        request.setMethod(Method.POST);
+        request.setEndpoint("mail/send");
+        request.setBody(mail.build());
+
+        Response response = sendGrid.api(request);
+        if (response.getStatusCode() == 202) {
+            log.info("Email change password sent to {} successfully !", to);
+        } else {
+            log.info("Email change password sent failed");
             log.info("status code = {}", response.getStatusCode());
         }
     }
