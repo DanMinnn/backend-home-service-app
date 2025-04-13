@@ -38,6 +38,8 @@ public class RegistrationServiceImpl implements RegistrationService {
                     .phoneNumber(dto.getPhoneNumber())
                     .passwordHash(encodedPassword)
                     .firstLastName(dto.getFirstLastName())
+                    .isVerified(dto.isVerify())
+                    .isActive(dto.isActive())
                     .userType(userDTO.getType())
                     .build();
 
@@ -54,6 +56,8 @@ public class RegistrationServiceImpl implements RegistrationService {
                     .latitude(taskerDTO.getLatitude())
                     .availabilityStatus(taskerDTO.getStatus())
                     .longitude(taskerDTO.getLongitude())
+                    .isVerified(dto.isVerify())
+                    .isActive(dto.isActive())
                     .build();
 
             Tasker savedTasker = taskerRepository.save(tasker);
@@ -74,6 +78,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         if ("USER".equals(userType)) {
             UserRegisterDTO dto = redisService.get("REGISTER::USER", UserRegisterDTO.class);
             dto.setVerify(true);
+            dto.setActive(true);
 
             log.info("User {} registered successfully", dto.getEmail());
             registerUser(dto, User.class);
@@ -81,6 +86,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         } else if ("TASKER".equals(userType)) {
             TaskerRegisterDTO dto = redisService.get("REGISTER::TASKER", TaskerRegisterDTO.class);
             dto.setVerify(true);
+            dto.setActive(true);
             registerUser(dto, Tasker.class);
         }
 

@@ -85,7 +85,7 @@ public class GlobalExceptionHandler {
                             }
                             """)) })
     })
-    public ErrorResponse handleAccessDeniedException(ResourceNotFoundException e, WebRequest request) {
+    public ErrorResponse handleAccessDeniedException(AccessDeniedException e, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setTimestamp(new Date());
         errorResponse.setPath(request.getDescription(false).replace("uri=", ""));

@@ -24,4 +24,6 @@ public abstract class RegisterDTO {
     private String phoneNumber;
 
     private boolean verify;
+
+    private boolean isActive;
 }
