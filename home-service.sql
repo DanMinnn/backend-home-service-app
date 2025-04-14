@@ -214,6 +214,17 @@ CREATE TABLE "user_addresses" (
   "updated_at" timestamp(6) DEFAULT now() NULL
 );
 
+ALTER TABLE user_addresses
+DROP COLUMN address_line1,
+DROP COLUMN country,
+DROP COLUMN city;
+
+
+ALTER TABLE user_addresses
+ADD COLUMN apartment_type VARCHAR(100),
+add column houser_number varchar(100),
+alter column address_name type varchar(255)
+
 CREATE TABLE "bookings" (
   "id" SERIAL PRIMARY KEY,
   "user_id" INTEGER NOT NULL,

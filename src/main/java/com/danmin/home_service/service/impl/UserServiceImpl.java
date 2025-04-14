@@ -8,12 +8,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import com.danmin.home_service.dto.request.AddressDTO;
 import com.danmin.home_service.dto.request.UserDTO;
 import com.danmin.home_service.dto.response.PageResponse;
 import com.danmin.home_service.dto.response.UserResponse;
+import com.danmin.home_service.model.Address;
 import com.danmin.home_service.model.BaseUser;
 import com.danmin.home_service.model.Tasker;
 import com.danmin.home_service.model.User;
+import com.danmin.home_service.repository.AddressRepository;
 import com.danmin.home_service.repository.SearchRepository;
 import com.danmin.home_service.repository.TaskerRepository;
 import com.danmin.home_service.repository.UserRepository;
@@ -30,6 +33,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final TaskerRepository taskerRepository;
     private final SearchRepository searchRepository;
+    private final AddressRepository addressRepository;
 
     @Override
     public void updateProfileUser(long userId, UserDTO req) {
@@ -137,6 +141,24 @@ public class UserServiceImpl implements UserService {
     public PageResponse<?> getAllTaskerWithSortByColumnsAndSearch(int pageNo, int pageSize, String search,
             String sortBy) {
         return searchRepository.getAllUserWithSortByColumnsAndSearch(pageNo, pageSize, search, sortBy, Tasker.class);
+    }
+
+    @Override
+    public void saveAddress(long userId, AddressDTO req) {
+
+        User user = (User) getUserById(userId);
+
+        Address userAddress = Address.builder()
+                .user(user)
+                .addressName(req.getAddressName())
+                .apartmentType(req.getApartmentType())
+                .houserNumber(req.getHouseNumber())
+                .longitude(req.getLongitude())
+                .latitude(req.getLatitude())
+                .isDefault(req.isDefault()).build();
+
+        addressRepository.save(userAddress);
+
     }
 
 }

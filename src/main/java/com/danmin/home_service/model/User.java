@@ -40,6 +40,9 @@ public class User extends AbstractUser<Integer> implements BaseUser {
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private Set<UserVerifications> userVerifications = new HashSet<>();
 
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private Set<Address> addresses = new HashSet<>();
+
     @Override
     public String getPassword() {
         return super.getPasswordHash();

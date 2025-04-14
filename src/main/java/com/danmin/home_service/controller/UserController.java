@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.danmin.home_service.dto.request.AddressDTO;
 import com.danmin.home_service.dto.request.UserDTO;
 import com.danmin.home_service.dto.response.ResponseData;
 import com.danmin.home_service.dto.response.ResponseError;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PostMapping;
 
 @RestController
 @RequestMapping("/user")
@@ -97,12 +99,27 @@ public class UserController {
     }
 
     @Operation(summary = "Get all taskers")
-    @GetMapping("/list")
+    @GetMapping("/list-tasker")
     public ResponseData<?> getAllTaskers(@RequestParam(defaultValue = "0", required = false) int pageNo,
             @RequestParam(defaultValue = "10", required = false) int pageSize) {
         log.info("Getting all user ");
 
         return new ResponseData<>(HttpStatus.OK.value(), "taskers", userService.getAllTasker(pageNo, pageSize));
+    }
+
+    @Operation(summary = "Add user's address")
+    @PostMapping("/address/{userId}")
+    public ResponseData<?> saveAddress(@PathVariable(value = "userId") long userId, @RequestBody AddressDTO req) {
+
+        log.info("Saving address user with id={}", userId);
+
+        try {
+            userService.saveAddress(userId, req);
+            return new ResponseData<>(HttpStatus.ACCEPTED.value(), "Saved user's address successfully !");
+        } catch (Exception e) {
+            log.error("errorMessage={}", e.getMessage(), e.getCause());
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+        }
     }
 
 }

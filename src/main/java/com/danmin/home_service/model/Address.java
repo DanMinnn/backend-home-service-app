@@ -21,14 +21,11 @@ public class Address extends AbstractEntity<Long> {
     @Column(name = "address_name", nullable = false)
     private String addressName;
 
-    @Column(name = "address_line1", nullable = false)
-    private String addressLine;
+    @Column(name = "apartment_type", nullable = false)
+    private String apartmentType;
 
-    @Column(name = "city", nullable = false)
-    private String city;
-
-    @Column(name = "country", nullable = false)
-    private String country;
+    @Column(name = "houser_number", nullable = false)
+    private String houserNumber;
 
     @Column(name = "latitude")
     private BigDecimal latitude;
