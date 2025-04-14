@@ -23,4 +23,12 @@ public class UserTypeService {
         }
         return taskerRepository.findByEmail(email).map(t -> (BaseUser) t);
     }
+
+    public Optional<BaseUser> findById(long userId) {
+        Optional<BaseUser> user = userRepository.findById(userId).map(u -> (BaseUser) u);
+        if (user.isPresent()) {
+            return user;
+        }
+        return taskerRepository.findById(userId).map(t -> (BaseUser) t);
+    }
 }
