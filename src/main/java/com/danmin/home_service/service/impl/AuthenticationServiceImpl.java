@@ -16,7 +16,9 @@ import com.danmin.home_service.dto.request.ChangePasswordDTO;
 import com.danmin.home_service.dto.request.SignInRequest;
 import com.danmin.home_service.dto.response.TokenResponse;
 import com.danmin.home_service.exception.InvalidDataException;
+import com.danmin.home_service.model.Tasker;
 import com.danmin.home_service.model.User;
+import com.danmin.home_service.repository.TaskerRepository;
 import com.danmin.home_service.repository.UserRepository;
 import com.danmin.home_service.service.AuthenticationService;
 import com.danmin.home_service.service.EmailService;
@@ -37,6 +39,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final TaskerRepository taskerRepository;
 
     @Override
     public TokenResponse getAccessToken(SignInRequest request) {
@@ -149,7 +152,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         final String email = jwtService.extractEmail(request.getSecretKey(), TokenType.RESET_TOKEN);
 
-        User user = (User) userTypeService.findByEmail(email)
+        var user = userTypeService.findByEmail(email)
                 .orElseThrow(() -> new AccessDeniedException("User not found with email: " + email));
 
         if (!user.isEnabled()) {
@@ -163,9 +166,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new InvalidDataException("Password not match");
         }
-        // encrypt password before save in db
-        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        userRepository.save(user);
+
+        if (user instanceof User) {
+            User userDefault = (User) user;
+            userDefault.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+            userRepository.save(userDefault);
+        } else if (user instanceof Tasker) {
+            Tasker tasker = (Tasker) user;
+            tasker.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+            taskerRepository.save(tasker);
+        }
+
         return "Changed";
     }
 
