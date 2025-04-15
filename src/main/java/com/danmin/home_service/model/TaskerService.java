@@ -20,7 +20,7 @@ public class TaskerService extends AbstractEntityNoDate<Integer> {
 
     @ManyToOne
     @JoinColumn(name = "service_id")
-    private Service service;
+    private Services service;
 
     @Column(name = "price_adjustment")
     private BigDecimal priceAdjustment = BigDecimal.ZERO;

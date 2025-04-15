@@ -23,5 +23,5 @@ public class FavoriteTasker extends AbstractEntityNoDate<Integer> {
 
     @ManyToOne
     @JoinColumn(name = "service_id")
-    private Service service;
+    private Services service;
 }

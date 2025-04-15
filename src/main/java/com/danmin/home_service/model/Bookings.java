@@ -30,7 +30,7 @@ public class Bookings extends AbstractEntity<Long> {
 
     @ManyToOne
     @JoinColumn(name = "service_id")
-    private Service service;
+    private Services service;
 
     @ManyToOne
     @JoinColumn(name = "address_id")

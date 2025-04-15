@@ -20,7 +20,7 @@ public class RecommendationLog extends AbstractEntityNoDate<Integer> {
 
     @ManyToOne
     @JoinColumn(name = "service_id")
-    private Service service;
+    private Services service;
 
     @ManyToOne
     @JoinColumn(name = "tasker_id")
