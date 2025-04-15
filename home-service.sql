@@ -176,6 +176,16 @@ CREATE TABLE "service_categories" (
   "is_active" BOOLEAN DEFAULT true
 );
 
+
+alter table service_categories
+drop column icon,
+drop column description;
+
+alter table services 
+drop column price_unit,
+drop column estimated_duration,
+drop column icon;
+
 CREATE TABLE "services" (
   "id" SERIAL PRIMARY KEY,
   "category_id" INTEGER NOT NULL,

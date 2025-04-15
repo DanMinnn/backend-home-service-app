@@ -1,5 +1,8 @@
 package com.danmin.home_service.model;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,13 +18,10 @@ public class ServiceCategory extends AbstractEntityNoDate<Integer> {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "description")
-    private String description;
-
-    @Column(name = "icon")
-    private String icon;
-
     @Column(name = "is_active")
     private Boolean isActive = true;
+
+    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
+    private Set<Services> services = new HashSet<>();
 
 }
