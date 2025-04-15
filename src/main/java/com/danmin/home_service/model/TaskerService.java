@@ -26,7 +26,7 @@ public class TaskerService extends AbstractEntityNoDate<Integer> {
     private BigDecimal priceAdjustment = BigDecimal.ZERO;
 
     @Column(name = "experience_years")
-    private BigDecimal experienceYears = BigDecimal.ZERO;
+    private Double experienceYears;
 
     @Column(name = "is_verified")
     private Boolean isVerified = false;

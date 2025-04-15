@@ -11,6 +11,7 @@ import org.locationtech.jts.geom.Point;
 import org.springframework.security.core.GrantedAuthority;
 
 import com.danmin.home_service.common.AvailabilityStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -54,6 +55,20 @@ public class Tasker extends AbstractUser<Integer> implements BaseUser {
 
     @OneToMany(mappedBy = "tasker", fetch = FetchType.LAZY)
     private Set<UserVerifications> userVerifications = new HashSet<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "tasker", fetch = FetchType.LAZY)
+    private Set<TaskerService> taskerServices = new HashSet<>();
+
+    public void saveService(TaskerService services) {
+        if (services != null) {
+            if (taskerServices == null) {
+                taskerServices = new HashSet<>();
+            }
+            taskerServices.add(services);
+            services.setTasker(this);
+        }
+    }
 
     @Override
     public String getPassword() {

@@ -6,10 +6,15 @@ import org.springframework.stereotype.Service;
 import com.danmin.home_service.dto.request.RegisterDTO;
 import com.danmin.home_service.dto.request.TaskerRegisterDTO;
 import com.danmin.home_service.dto.request.UserRegisterDTO;
+import com.danmin.home_service.exception.ResourceNotFoundException;
 import com.danmin.home_service.model.AbstractUser;
+import com.danmin.home_service.model.Services;
 import com.danmin.home_service.model.Tasker;
+import com.danmin.home_service.model.TaskerService;
 import com.danmin.home_service.model.User;
+import com.danmin.home_service.repository.ServiceRepository;
 import com.danmin.home_service.repository.TaskerRepository;
+import com.danmin.home_service.repository.TaskerServiceRepository;
 import com.danmin.home_service.repository.UserRepository;
 import com.danmin.home_service.service.RedisService;
 import com.danmin.home_service.service.RegistrationService;
@@ -26,6 +31,8 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final TaskerRepository taskerRepository;
     private final PasswordEncoder passwordEncoder;
     private final RedisService redisService;
+    private final ServiceRepository serviceRepository;
+    private final TaskerServiceRepository taskerServiceRepository;
 
     @Override
     public <T extends AbstractUser<?>> long registerUser(RegisterDTO dto, Class<T> userType) {
@@ -61,6 +68,19 @@ public class RegistrationServiceImpl implements RegistrationService {
                     .build();
 
             Tasker savedTasker = taskerRepository.save(tasker);
+
+            if (taskerDTO.getServiceIds() != null && !taskerDTO.getServiceIds().isEmpty()) {
+                for (Long serviceId : taskerDTO.getServiceIds()) {
+                    Services services = serviceRepository.findById(serviceId).orElseThrow(
+                            () -> new ResourceNotFoundException("Service not found with id: " + serviceId));
+
+                    TaskerService taskerService = TaskerService.builder().tasker(tasker).service(services)
+                            .experienceYears(2.0).isVerified(true).build();
+
+                    taskerServiceRepository.save(taskerService);
+                }
+            }
+
             return savedTasker.getId();
         }
         throw new IllegalArgumentException("Unsupported user type: " + userType.getName());

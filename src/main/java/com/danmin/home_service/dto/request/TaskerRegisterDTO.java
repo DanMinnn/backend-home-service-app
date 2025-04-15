@@ -2,10 +2,12 @@ package com.danmin.home_service.dto.request;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.Set;
 
 import com.danmin.home_service.common.AvailabilityStatus;
 import com.danmin.home_service.dto.validator.EnumPattern;
 
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,4 +27,7 @@ public class TaskerRegisterDTO extends RegisterDTO implements Serializable {
     @NotNull(message = "type must be not null")
     @EnumPattern(name = "status", regexp = "available|busy|offline")
     private AvailabilityStatus status;
+
+    @NotEmpty(message = "Service cannot be empty")
+    private Set<Long> serviceIds;
 }
