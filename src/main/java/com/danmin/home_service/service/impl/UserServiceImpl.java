@@ -41,16 +41,34 @@ public class UserServiceImpl implements UserService {
 
         if (user instanceof User) {
             User userUpdate = (User) user;
-            userUpdate.setFirstLastName(req.getFirstLastName());
-            userUpdate.setProfileImage(req.getProfileImage());
-            userUpdate.setAddress(req.getAddress());
+
+            if (req.getFirstLastName() != null) {
+                userUpdate.setFirstLastName(req.getFirstLastName());
+            }
+
+            if (req.getProfileImage() != null) {
+                userUpdate.setProfileImage(req.getProfileImage());
+            }
+
+            if (req.getAddress() != null) {
+                userUpdate.setAddress(req.getAddress());
+            }
 
             userRepository.save(userUpdate);
         } else if (user instanceof Tasker) {
             Tasker tasker = (Tasker) user;
-            tasker.setFirstLastName(req.getFirstLastName());
-            tasker.setProfileImage(req.getProfileImage());
-            tasker.setAddress(req.getAddress());
+
+            if (req.getFirstLastName() != null) {
+                tasker.setFirstLastName(req.getFirstLastName());
+            }
+
+            if (req.getProfileImage() != null) {
+                tasker.setProfileImage(req.getProfileImage());
+            }
+
+            if (req.getAddress() != null) {
+                tasker.setAddress(req.getAddress());
+            }
 
             taskerRepository.save(tasker);
         }
