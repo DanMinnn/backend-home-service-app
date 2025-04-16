@@ -1,12 +1,11 @@
 package com.danmin.home_service.model;
 
-import java.util.Date;
-
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import com.danmin.home_service.common.BookingStatus;
 import com.danmin.home_service.common.CancelledByType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -21,29 +20,34 @@ import lombok.*;
 public class Bookings extends AbstractEntity<Long> {
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "user_id")
     private User user;
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "tasker_id")
     private Tasker tasker;
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "service_id")
     private Services service;
 
-    @ManyToOne
-    @JoinColumn(name = "address_id")
-    private Address address;
+    @Column(name = "address_name")
+    private String address;
 
     @Column(name = "scheduled_date")
-    private Date scheduledDate;
-
-    @Column(name = "scheduled_time")
-    private Date scheduledTime;
+    private String scheduledDate;
 
     @Column(name = "duration")
-    private Integer duration;
+    private String duration;
+
+    @Column(name = "work_load")
+    private String workLoad;
+
+    @Column(name = "total_price")
+    private Double totalPrice;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
@@ -52,9 +56,6 @@ public class Bookings extends AbstractEntity<Long> {
 
     @Column(columnDefinition = "TEXT")
     private String notes;
-
-    @Column(name = "completed_at")
-    private Date completedAt;
 
     @Column(name = "cancellation_reason", columnDefinition = "TEXT")
     private String cancellationReason;
@@ -65,9 +66,8 @@ public class Bookings extends AbstractEntity<Long> {
     private CancelledByType cancelledByType;
 
     @Column(name = "is_recurring")
-    private Boolean isRecurring = false;
+    private Boolean isRecurring;
 
     @Column(name = "recurring_pattern")
     private String recurringPattern;
-
 }

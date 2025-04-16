@@ -210,6 +210,9 @@ CREATE TABLE "tasker_services" (
   UNIQUE(tasker_id, service_id)
 );
 
+alter table tasker_services
+drop column price_adjustment
+
 CREATE TABLE "user_addresses" (
   "id" SERIAL PRIMARY KEY,
   "user_id" INTEGER NOT NULL,
@@ -238,22 +241,40 @@ alter column address_name type varchar(255)
 CREATE TABLE "bookings" (
   "id" SERIAL PRIMARY KEY,
   "user_id" INTEGER NOT NULL,
-  "tasker_id" INTEGER NOT NULL,
-  "service_id" INTEGER NOT NULL,
-  "address_id" INTEGER NOT NULL,
-  "scheduled_date" DATE NOT NULL,
-  "scheduled_time" TIME NOT NULL,
-  "duration" INTEGER NOT NULL,
+  "tasker_id" INTEGER NOT NULL, --change not null -> null
+  "service_id" INTEGER NOT NULL, 
+  "address_id" INTEGER NOT NULL,-- change type data to text
+  "scheduled_date" DATE NOT NULL,-- change data type to text
+  "scheduled_time" TIME NOT NULL,-- remove column "scheduled_time"
+  "duration" INTEGER NOT NULL, -- change data type to text
   "status" booking_status NOT NULL,
   "notes" text,
   "created_at" timestamp(6) DEFAULT now() NULL,
   "updated_at" timestamp(6) DEFAULT now() NULL,
-  "completed_at" TIMESTAMP,
+  "completed_at" TIMESTAMP, -- drop this column
   "cancellation_reason" TEXT,
   "cancelled_by" cancelled_by_type,
   "is_recurring" BOOLEAN DEFAULT false,
-  "recurring_pattern" VARCHAR(50)
+  "recurring_pattern" VARCHAR(50) -- e.g., "weekly", "biweekly", "monthly"
 );
+
+alter table bookings
+--drop constraint bookings_address_id_fkey
+drop column scheduled_time,
+drop column completed_at,
+alter column tasker_id drop not null,
+alter column address_id type TEXT,
+alter column scheduled_date type text,
+alter column duration type text,
+add column work_load text
+
+alter table bookings
+RENAME column address_id to address_name
+
+alter table bookings
+add column house_numer text
+add column total_price DECIMAL(5,2)
+
 
 CREATE TABLE "booking_status_history" (
   "id" SERIAL PRIMARY KEY,
@@ -508,7 +529,7 @@ ALTER TABLE "user_addresses" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id
 ALTER TABLE "bookings" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "bookings" ADD FOREIGN KEY ("tasker_id") REFERENCES "tasker" ("id");
 ALTER TABLE "bookings" ADD FOREIGN KEY ("service_id") REFERENCES "services" ("id");
-ALTER TABLE "bookings" ADD FOREIGN KEY ("address_id") REFERENCES "user_addresses" ("id");
+ALTER TABLE "bookings" ADD FOREIGN KEY ("address_id") REFERENCES "user_addresses" ("id"); 
 ALTER TABLE "booking_status_history" ADD FOREIGN KEY ("booking_id") REFERENCES "bookings" ("id");
 ALTER TABLE "payment_methods" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "payments" ADD FOREIGN KEY ("booking_id") REFERENCES "bookings" ("id");
