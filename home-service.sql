@@ -355,6 +355,9 @@ CREATE TABLE "reviews" (
   "is_public" BOOLEAN DEFAULT true
 );
 
+alter table reviews 
+drop column is_public
+
 CREATE TABLE "chat_rooms" (
   "id" SERIAL PRIMARY KEY,
   "booking_id" INTEGER,

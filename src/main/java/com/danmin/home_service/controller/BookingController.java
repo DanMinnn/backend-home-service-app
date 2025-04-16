@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.danmin.home_service.dto.request.BookingDTO;
+import com.danmin.home_service.dto.request.ReviewDTO;
 import com.danmin.home_service.dto.response.BookingDetailResponse;
 import com.danmin.home_service.dto.response.ResponseData;
 import com.danmin.home_service.dto.response.ResponseError;
@@ -90,12 +91,48 @@ public class BookingController {
     public ResponseData<BookingDetailResponse> cancelBooking(@PathVariable(value = "bookingId") Long bookingId,
             @RequestParam(value = "cancelReason") String cancelReason) {
 
-        log.info("Getting booking detail with booking id={}", bookingId);
+        log.info("Cancel booking with booking id={}", bookingId);
 
         try {
             bookingService.cancelBookings(bookingId, cancelReason);
 
             return new ResponseData<>(HttpStatus.OK.value(), "Cancel booking successfully");
+        } catch (ResourceNotFoundException e) {
+            log.error("errorMessage={}", e.getMessage(), e.getCause());
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+        }
+
+    }
+
+    @Operation(summary = "Completed booking job")
+    @PutMapping("/completed-booking/{bookingId}")
+
+    public ResponseData<BookingDetailResponse> completedBooking(@PathVariable(value = "bookingId") Long bookingId) {
+
+        log.info("Completing booking with booking id={}", bookingId);
+
+        try {
+            bookingService.completedJob(bookingId);
+
+            return new ResponseData<>(HttpStatus.OK.value(), "Completed booking successfully");
+        } catch (ResourceNotFoundException e) {
+            log.error("errorMessage={}", e.getMessage(), e.getCause());
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+        }
+
+    }
+
+    @Operation(summary = "Review user/tasker")
+    @PostMapping("/review")
+
+    public ResponseData<?> review(@RequestBody ReviewDTO req) {
+
+        log.info("Reviewing with booking id={}", req.getBookingId());
+
+        try {
+            bookingService.rating(req);
+
+            return new ResponseData<>(HttpStatus.OK.value(), "Reviewed booking successfully");
         } catch (ResourceNotFoundException e) {
             log.error("errorMessage={}", e.getMessage(), e.getCause());
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());

@@ -1,5 +1,8 @@
 package com.danmin.home_service.model;
 
+import java.util.Date;
+
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -48,6 +51,10 @@ public class Bookings extends AbstractEntity<Long> {
 
     @Column(name = "total_price")
     private Double totalPrice;
+
+    @Column(name = "completed_at")
+    @CreationTimestamp
+    private Date completedAt;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
