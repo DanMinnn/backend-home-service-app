@@ -1,6 +1,7 @@
 package com.danmin.home_service.dto.request;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 import com.danmin.home_service.common.BookingStatus;
 import com.danmin.home_service.common.CancelledByType;
@@ -42,4 +43,8 @@ public class BookingDTO implements Serializable {
     private Boolean isRecurring;
 
     private String recurringPattern;
+
+    private BigDecimal longitude;
+
+    private BigDecimal latitude;
 }

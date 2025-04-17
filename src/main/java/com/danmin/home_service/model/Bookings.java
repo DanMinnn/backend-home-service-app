@@ -1,5 +1,6 @@
 package com.danmin.home_service.model;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -55,6 +56,12 @@ public class Bookings extends AbstractEntity<Long> {
     @Column(name = "completed_at")
     @CreationTimestamp
     private Date completedAt;
+
+    @Column(name = "latitude")
+    private BigDecimal latitude;
+
+    @Column(name = "longitude")
+    private BigDecimal longitude;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)

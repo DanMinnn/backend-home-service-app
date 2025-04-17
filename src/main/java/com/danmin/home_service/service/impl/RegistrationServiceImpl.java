@@ -61,8 +61,8 @@ public class RegistrationServiceImpl implements RegistrationService {
                     .passwordHash(encodedPassword)
                     .firstLastName(dto.getFirstLastName())
                     .latitude(taskerDTO.getLatitude())
-                    .availabilityStatus(taskerDTO.getStatus())
                     .longitude(taskerDTO.getLongitude())
+                    .availabilityStatus(taskerDTO.getStatus())
                     .isVerified(dto.isVerify())
                     .isActive(dto.isActive())
                     .build();

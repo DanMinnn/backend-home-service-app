@@ -51,4 +51,9 @@ jwt:
   expiration: ${JWT_EXPIRATION}
   refresh-token: ${JWT_REFRESH_KEY}
   reset-key: ${JWT_RESET_KEY}
+
+app:
+  notification:
+    search-radius-meters: 5000
+    max-taskers: 10
   

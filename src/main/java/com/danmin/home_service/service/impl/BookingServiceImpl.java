@@ -60,6 +60,8 @@ public class BookingServiceImpl implements BookingService {
                 .workLoad(req.getWorkLoad())
                 .totalPrice(req.getTotalPrice())
                 .notes(req.getNotes())
+                .longitude(req.getLongitude())
+                .latitude(req.getLatitude())
                 .bookingStatus(BookingStatus.pending)
                 .cancellationReason(req.getCancellationReason())
                 .build();
