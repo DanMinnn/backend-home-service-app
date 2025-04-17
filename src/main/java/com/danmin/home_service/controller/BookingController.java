@@ -85,16 +85,35 @@ public class BookingController {
 
     }
 
-    @Operation(summary = "Cancel booking")
+    @Operation(summary = "Cancel booking by user")
     @PutMapping("/cancel-booking/{bookingId}")
 
-    public ResponseData<BookingDetailResponse> cancelBooking(@PathVariable(value = "bookingId") Long bookingId,
+    public ResponseData<BookingDetailResponse> cancelBookingByUser(@PathVariable(value = "bookingId") Long bookingId,
             @RequestParam(value = "cancelReason") String cancelReason) {
 
         log.info("Cancel booking with booking id={}", bookingId);
 
         try {
-            bookingService.cancelBookings(bookingId, cancelReason);
+            bookingService.cancelBookingByUser(bookingId, cancelReason);
+
+            return new ResponseData<>(HttpStatus.OK.value(), "Cancel booking successfully");
+        } catch (ResourceNotFoundException e) {
+            log.error("errorMessage={}", e.getMessage(), e.getCause());
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+        }
+
+    }
+
+    @Operation(summary = "Cancel booking by tasker")
+    @PutMapping("/cancel-booking/{bookingId}")
+
+    public ResponseData<BookingDetailResponse> cancelBookingByTasker(@PathVariable(value = "bookingId") Long bookingId,
+            @RequestParam(value = "cancelReason") String cancelReason) {
+
+        log.info("Cancel booking with booking id={}", bookingId);
+
+        try {
+            bookingService.cancelBookingByTasker(bookingId, cancelReason);
 
             return new ResponseData<>(HttpStatus.OK.value(), "Cancel booking successfully");
         } catch (ResourceNotFoundException e) {

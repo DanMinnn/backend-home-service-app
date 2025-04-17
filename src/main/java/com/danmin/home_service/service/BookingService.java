@@ -12,7 +12,9 @@ public interface BookingService {
 
     BookingDetailResponse getBookingDetail(long bookingId);
 
-    void cancelBookings(long bookingId, String cancelReason);
+    void cancelBookingByUser(long bookingId, String cancelReason);
+
+    void cancelBookingByTasker(long bookingId, String cancelReason);
 
     void completedJob(long bookingId);
 

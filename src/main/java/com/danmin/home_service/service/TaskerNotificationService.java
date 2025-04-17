@@ -35,8 +35,10 @@ public class TaskerNotificationService {
         Bookings booking = bookingsRepository.findById(bookingId)
                 .orElseThrow(() -> new EntityNotFoundException("Booking not found"));
 
+        Long bookingServiceId = booking.getService().getId();
+
         List<Object[]> nearbyTaskers = taskerRepository.findAvailableTaskersNearby(booking.getLatitude(),
-                booking.getLongitude(), searchRadiusMeters, maxTaskers);
+                booking.getLongitude(), searchRadiusMeters, bookingServiceId, maxTaskers);
 
         List<TaskerNotification> notifications = new ArrayList<>();
 

@@ -41,6 +41,8 @@ public class BookingServiceImpl implements BookingService {
     private final ReviewRepository reviewRepository;
     private final UserTypeService userTypeService;
 
+    private Integer taskerAssigned = 0;
+
     @Transactional(rollbackOn = Exception.class)
     @Override
     public void createBooking(BookingDTO req) {
@@ -100,6 +102,7 @@ public class BookingServiceImpl implements BookingService {
 
         bookingRepository.save(booking);
 
+        taskerAssigned = tasker.getId();
     }
 
     @Override
@@ -131,21 +134,49 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public void cancelBookings(long bookingId, String cancelReason) {
+    public void cancelBookingByUser(long bookingId, String cancelReason) {
 
         Bookings booking = getBookingById(bookingId);
 
-        Long taskerId = booking.getTasker().getId().longValue();
+        if (taskerAssigned != 0) {
+            Long taskerId = booking.getTasker().getId().longValue();
 
-        Tasker tasker = taskerRepository.findById(taskerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tasker not found with id: " + taskerId));
+            Tasker tasker = taskerRepository.findById(taskerId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Tasker not found with id: " + taskerId));
+
+            tasker.setAvailabilityStatus(AvailabilityStatus.available);
+
+            taskerRepository.save(tasker);
+            taskerAssigned = 0;
+        }
 
         booking.setBookingStatus(BookingStatus.cancelled);
         booking.setCancelledByType(CancelledByType.user);
         booking.setCancellationReason(cancelReason);
-        tasker.setAvailabilityStatus(AvailabilityStatus.available);
+        bookingRepository.save(booking);
 
-        taskerRepository.save(tasker);
+    }
+
+    @Override
+    public void cancelBookingByTasker(long bookingId, String cancelReason) {
+
+        Bookings booking = getBookingById(bookingId);
+
+        if (taskerAssigned != 0) {
+            Long taskerId = booking.getTasker().getId().longValue();
+
+            Tasker tasker = taskerRepository.findById(taskerId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Tasker not found with id: " + taskerId));
+
+            tasker.setAvailabilityStatus(AvailabilityStatus.available);
+
+            taskerRepository.save(tasker);
+            taskerAssigned = 0;
+        }
+
+        booking.setBookingStatus(BookingStatus.cancelled);
+        booking.setCancelledByType(CancelledByType.tasker);
+        booking.setCancellationReason(cancelReason);
         bookingRepository.save(booking);
     }
 
