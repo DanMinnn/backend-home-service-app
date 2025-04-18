@@ -379,6 +379,9 @@ CREATE TABLE "chat_messages" (
   "read_at" TIMESTAMP
 );
 
+alter table chat_messages 
+drop column is_read
+
 CREATE TABLE "user_preferences" (
   "id" SERIAL PRIMARY KEY,
   "user_id" INTEGER NOT NULL,

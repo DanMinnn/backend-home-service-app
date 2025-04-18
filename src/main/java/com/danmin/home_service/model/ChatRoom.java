@@ -1,6 +1,6 @@
 package com.danmin.home_service.model;
 
-import java.sql.Date;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,7 +12,7 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "chat_rooms")
-public class ChatRoom extends AbstractEntityCreatedAt<Long> {
+public class ChatRoom extends AbstractEntityCreatedAt<Integer> {
 
     @OneToOne
     @JoinColumn(name = "booking_id")
@@ -27,5 +27,5 @@ public class ChatRoom extends AbstractEntityCreatedAt<Long> {
     private Tasker tasker;
 
     @Column(name = "last_message_at")
-    private Date lastMessageAt;
+    private LocalDateTime lastMessageAt;
 }

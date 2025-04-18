@@ -60,7 +60,7 @@ public class User extends AbstractUser<Integer> implements BaseUser {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authorities = new ArrayList<>();
         if (userType != null) {
-            authorities.add(new SimpleGrantedAuthority("ROLE_" + userType.name()));
+            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
         }
         return authorities;
     }

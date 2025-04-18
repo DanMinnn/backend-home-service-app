@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Chat WebSocket Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+
+<body>
+    <div>
+        <h1>WebSocket Chat Test</h1>
+        <div>
+            <input type="text" id="token" placeholder="JWT Token" style="width: 300px;" />
+            <button onclick="connect()">Connect</button>
+        </div>
+        <div style="margin-top: 20px;">
+            <select id="senderType">
+                <option value="user">User</option>
+                <option value="tasker">Tasker</option>
+            </select>
+            <input type="number" id="roomId" placeholder="Room ID" />
+            <input type="number" id="senderId" placeholder="Sender ID" />
+            <input type="text" id="message" placeholder="Message" />
+            <button onclick="sendMessage()">Send</button>
+        </div>
+        <div id="messages"
+            style="margin-top: 20px; border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: auto;">
+        </div>
+    </div>
+
+    <script>
+        let stompClient = null;
+        let userId = null;
+        let role = null;
+
+        function connect() {
+            const token = document.getElementById('token').value;
+            if (!token) {
+                alert('Please enter a JWT token');
+                return;
+            }
+
+            const socket = new SockJS('http://localhost:8080/ws?token=' + token);
+            stompClient = Stomp.over(socket);
+
+            stompClient.connect({}, function (frame) {
+                console.log('Connected: ' + frame);
+
+                // Parse JWT để lấy userId và role
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                userId = payload.userId;
+
+                // Check roles
+                const roles = payload.roles;
+                role = roles.find(r => r.authority === 'ROLE_USER') ? 'user' : 'tasker';
+
+                // Subscribe dựa vào role
+                if (role === 'user') {
+                    stompClient.subscribe('/queue/user.' + userId, onMessageReceived);
+                } else {
+                    stompClient.subscribe('/queue/tasker.' + userId, onMessageReceived);
+                }
+
+                document.getElementById('messages').innerHTML += '<div>Connected as ' + role + ' with ID ' + userId + '</div>';
+            }, function (error) {
+                console.log('Connection error: ' + error);
+                document.getElementById('messages').innerHTML += '<div style="color: red;">Connection error: ' + error + '</div>';
+            });
+        }
+
+        function sendMessage() {
+            if (!stompClient || !stompClient.connected) {
+                alert('Not connected to WebSocket');
+                return;
+            }
+
+            const roomId = document.getElementById('roomId').value;
+            const senderId = document.getElementById('senderId').value;
+            const messageText = document.getElementById('message').value;
+            const senderType = document.getElementById('senderType').value;
+
+            if (!roomId || !senderId || !messageText) {
+                alert('Please fill all fields');
+                return;
+            }
+
+            const chatMessage = {
+                roomId: roomId,
+                senderType: senderType,
+                senderId: parseInt(senderId),
+                messageText: messageText
+            };
+
+            stompClient.send('/app/chat.sendMessage', {}, JSON.stringify(chatMessage));
+            document.getElementById('message').value = '';
+        }
+
+        function onMessageReceived(payload) {
+            const message = JSON.parse(payload.body);
+            document.getElementById('messages').innerHTML +=
+                '<div style="margin-bottom: 10px;">' +
+                '<strong>' + message.senderName + ':</strong> ' +
+                message.messageText +
+                '</div>';
+        }
+    </script>
+</body>
+
+</html>

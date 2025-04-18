@@ -1,6 +1,7 @@
 package com.danmin.home_service.model;
 
 import java.sql.Date;
+import java.time.LocalDateTime;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -34,10 +35,7 @@ public class ChatMessage extends AbstractEntityNoDate<Integer> {
     private String messageText;
 
     @Column(name = "sent_at")
-    private Date sentAt;
-
-    @Column(name = "is_read")
-    private Boolean isRead;
+    private LocalDateTime sentAt;
 
     @Column(name = "read_at")
     private Date readAt;
