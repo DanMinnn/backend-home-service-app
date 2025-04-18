@@ -86,7 +86,7 @@ public class BookingController {
     }
 
     @Operation(summary = "Cancel booking by user")
-    @PutMapping("/cancel-booking/{bookingId}")
+    @PutMapping("/cancel-booking-by-user/{bookingId}")
 
     public ResponseData<BookingDetailResponse> cancelBookingByUser(@PathVariable(value = "bookingId") Long bookingId,
             @RequestParam(value = "cancelReason") String cancelReason) {
@@ -105,7 +105,7 @@ public class BookingController {
     }
 
     @Operation(summary = "Cancel booking by tasker")
-    @PutMapping("/cancel-booking/{bookingId}")
+    @PutMapping("/cancel-booking-by-tasker/{bookingId}")
 
     public ResponseData<BookingDetailResponse> cancelBookingByTasker(@PathVariable(value = "bookingId") Long bookingId,
             @RequestParam(value = "cancelReason") String cancelReason) {
