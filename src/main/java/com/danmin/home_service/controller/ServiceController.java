@@ -104,10 +104,10 @@ public class ServiceController {
         }
     }
 
-    @Operation(summary = "Delete service category")
+    @Operation(summary = "Delete service")
     @DeleteMapping("/delete-service/{serviceId}")
     public ResponseData<?> deleteService(@PathVariable(value = "serviceId") long serviceId) {
-        log.info("Deleting service category...");
+        log.info("Deleting service...");
 
         try {
             servicesService.deleteService(serviceId);
@@ -124,7 +124,7 @@ public class ServiceController {
             @RequestParam(defaultValue = "10", required = false) int pageSize) {
         log.info("Getting all user ");
 
-        return new ResponseData<>(HttpStatus.OK.value(), "Servuce Category",
+        return new ResponseData<>(HttpStatus.OK.value(), "Service Category",
                 servicesService.getAllService(pageNo, pageSize));
     }
 

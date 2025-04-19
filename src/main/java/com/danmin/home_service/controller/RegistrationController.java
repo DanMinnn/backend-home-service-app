@@ -34,7 +34,7 @@ public abstract class RegistrationController<T extends AbstractUser<?>, D extend
             var emailUser = userRepository.findByEmail(req.getEmail());
             var emailTasker = taskerRepository.findByEmail(req.getEmail());
 
-            if (emailUser != null || emailTasker != null) {
+            if (emailUser.isPresent() || emailTasker.isPresent()) {
                 // Check if email already exists in either User or Tasker repository
                 log.error("Email {} already exists", req.getEmail());
                 return "Email already exists";
