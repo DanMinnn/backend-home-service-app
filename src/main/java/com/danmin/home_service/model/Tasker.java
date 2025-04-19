@@ -56,8 +56,12 @@ public class Tasker extends AbstractUser<Integer> implements BaseUser {
     @Column(name = "availability_status")
     private AvailabilityStatus availabilityStatus;
 
-    @OneToMany(mappedBy = "tasker", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "tasker", fetch = FetchType.EAGER)
     private Set<UserVerifications> userVerifications = new HashSet<>();
+
+    @OneToMany(mappedBy = "tasker", fetch = FetchType.EAGER)
+    @JsonIgnore
+    private Set<TaskerRole> taskerRoles = new HashSet<>();
 
     @JsonIgnore
     @OneToMany(mappedBy = "tasker", fetch = FetchType.LAZY)
@@ -86,7 +90,18 @@ public class Tasker extends AbstractUser<Integer> implements BaseUser {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority("ROLE_TASKER"));
+
+        if (taskerRoles != null) {
+            for (TaskerRole taskerRole : taskerRoles) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + taskerRole.getRole().getRoleName().toUpperCase()));
+
+                for (Role_Permission role_Permission : taskerRole.getRole().getRolePermissions()) {
+                    Permission permission = role_Permission.getPermission();
+                    authorities.add(new SimpleGrantedAuthority(
+                            permission.getMethods() + ":" + permission.getMethodPath()));
+                }
+            }
+        }
         return authorities;
     }
 

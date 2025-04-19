@@ -1,7 +1,5 @@
 package com.danmin.home_service.model;
 
-import java.util.Date;
-
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,11 +19,4 @@ public class TaskerRole extends AbstractEntityNoDate<Integer> {
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;
-
-    @Column(name = "assigned_at")
-    private Date assignedAt;
-
-    @ManyToOne
-    @JoinColumn(name = "assigned_by")
-    private User assignedBy;
 }

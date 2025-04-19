@@ -427,6 +427,10 @@ CREATE TABLE "permissions" (
   UNIQUE(permission_name)
 );
 
+alter table permissions 
+--rename column permission_name to methods
+add column method_path text
+
 CREATE TABLE "role_permissions" (
   "role_id" INTEGER,
   "permission_id" INTEGER,
@@ -441,6 +445,9 @@ CREATE TABLE "user_roles" (
   PRIMARY KEY(user_id, role_id)
 );
 
+alter table user_roles
+drop column assigned_at, drop column assigned_by
+
 CREATE TABLE "tasker_roles" (
   "tasker_id" INTEGER,
   "role_id" INTEGER,
@@ -448,6 +455,10 @@ CREATE TABLE "tasker_roles" (
   "assigned_by" INTEGER,
   PRIMARY KEY(tasker_id, role_id)
 );
+
+
+alter table tasker_roles
+drop column assigned_at, drop column assigned_by
 
 CREATE TABLE "notifications" (
   "id" SERIAL PRIMARY KEY,

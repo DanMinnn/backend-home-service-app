@@ -8,14 +8,20 @@ import com.danmin.home_service.dto.request.TaskerRegisterDTO;
 import com.danmin.home_service.dto.request.UserRegisterDTO;
 import com.danmin.home_service.exception.ResourceNotFoundException;
 import com.danmin.home_service.model.AbstractUser;
+import com.danmin.home_service.model.Role;
 import com.danmin.home_service.model.Services;
 import com.danmin.home_service.model.Tasker;
+import com.danmin.home_service.model.TaskerRole;
 import com.danmin.home_service.model.TaskerService;
 import com.danmin.home_service.model.User;
+import com.danmin.home_service.model.UserRole;
+import com.danmin.home_service.repository.RoleRepository;
 import com.danmin.home_service.repository.ServiceRepository;
 import com.danmin.home_service.repository.TaskerRepository;
+import com.danmin.home_service.repository.TaskerRoleRepository;
 import com.danmin.home_service.repository.TaskerServiceRepository;
 import com.danmin.home_service.repository.UserRepository;
+import com.danmin.home_service.repository.UserRoleRepository;
 import com.danmin.home_service.service.RedisService;
 import com.danmin.home_service.service.RegistrationService;
 
@@ -34,11 +40,18 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final ServiceRepository serviceRepository;
     private final TaskerServiceRepository taskerServiceRepository;
 
+    private final RoleRepository roleRepository;
+    private final UserRoleRepository userRoleRepository;
+    private final TaskerRoleRepository taskerRoleRepository;
+
     @Override
     public <T extends AbstractUser<?>> long registerUser(RegisterDTO dto, Class<T> userType) {
         String encodedPassword = passwordEncoder.encode(dto.getPassword());
 
         if (userType.equals(User.class)) {
+
+            Role userRole = roleRepository.findByRoleName("user").orElse(null);
+
             UserRegisterDTO userDTO = (UserRegisterDTO) dto;
             User user = User.builder()
                     .email(dto.getEmail())
@@ -51,9 +64,16 @@ public class RegistrationServiceImpl implements RegistrationService {
                     .build();
 
             User savedUser = userRepository.save(user);
+
+            // role user
+            userRoleRepository.save(UserRole.builder().user(savedUser).role(userRole).build());
+
             return savedUser.getId();
 
         } else if (userType.equals(Tasker.class)) {
+
+            Role taskerRole = roleRepository.findByRoleName("tasker").orElse(null);
+
             TaskerRegisterDTO taskerDTO = (TaskerRegisterDTO) dto;
             Tasker tasker = Tasker.builder()
                     .email(dto.getEmail())
@@ -69,6 +89,10 @@ public class RegistrationServiceImpl implements RegistrationService {
 
             Tasker savedTasker = taskerRepository.save(tasker);
 
+            // role tasker
+            taskerRoleRepository.save(TaskerRole.builder().tasker(savedTasker).role(taskerRole).build());
+
+            // when tasker register, they can choose service apply for job
             if (taskerDTO.getServiceIds() != null && !taskerDTO.getServiceIds().isEmpty()) {
                 for (Long serviceId : taskerDTO.getServiceIds()) {
                     Services services = serviceRepository.findById(serviceId).orElseThrow(

@@ -38,13 +38,17 @@ public class User extends AbstractUser<Integer> implements BaseUser {
     @Column(name = "user_type")
     private UserType userType;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
     @JsonIgnore
     private Set<UserVerifications> userVerifications = new HashSet<>();
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
     @JsonIgnore
     private Set<Address> addresses = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    @JsonIgnore
+    private Set<UserRole> userRoles = new HashSet<>();
 
     @Override
     public String getPassword() {
@@ -59,8 +63,18 @@ public class User extends AbstractUser<Integer> implements BaseUser {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authorities = new ArrayList<>();
-        if (userType != null) {
-            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+
+        if (userRoles != null) {
+            for (UserRole userRole : userRoles) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + userRole.getRole().getRoleName().toUpperCase()));
+
+                for (Role_Permission role_Permission : userRole.getRole().getRolePermissions()) {
+                    Permission permission = role_Permission.getPermission();
+                    authorities.add(new SimpleGrantedAuthority(
+                            permission.getMethods() + ":" + permission.getMethodPath()));
+                }
+            }
         }
         return authorities;
     }
