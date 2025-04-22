@@ -3,6 +3,9 @@ package com.danmin.home_service.model;
 import java.math.BigDecimal;
 import java.util.Date;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import com.danmin.home_service.common.PaymentStatus;
 
 import jakarta.persistence.*;
@@ -26,7 +29,7 @@ public class Payments extends AbstractEntityNoDate<Integer> {
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "tasker_id", nullable = false)
+    @JoinColumn(name = "tasker_id", nullable = true)
     private Tasker tasker;
 
     @ManyToOne
@@ -34,12 +37,13 @@ public class Payments extends AbstractEntityNoDate<Integer> {
     private PaymentMethods paymentMethod;
 
     @Column(name = "amount", nullable = false)
-    private BigDecimal amount;
+    private Double amount;
 
     @Column(name = "currency", length = 3)
     private String currency;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "status", nullable = false)
     private PaymentStatus status;
 

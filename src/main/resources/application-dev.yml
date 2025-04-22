@@ -56,4 +56,11 @@ app:
   notification:
     search-radius-meters: 5000
     max-taskers: 10
+
+vnpay:
+  version: ${VNP_VERSION}
+  tmn_Code: ${VNP_TMNCODE}
+  hash_secret: ${VNP_HASH_SECRET}
+  payment_url: ${VNP_PAYMENT_URL}
+  return_url: ${VNP_RETURN_URL}
   

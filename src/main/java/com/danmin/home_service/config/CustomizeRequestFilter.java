@@ -57,7 +57,8 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
         // if not in endpoint public, check authentication by token
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            sendUnauthorizedResponse(response, "No valid authorization token found");
+            // sendUnauthorizedResponse(response, "No valid authorization token found");
+            filterChain.doFilter(request, response);
             return;
         }
 

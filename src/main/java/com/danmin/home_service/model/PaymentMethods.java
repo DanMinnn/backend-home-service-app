@@ -22,18 +22,6 @@ public class PaymentMethods extends AbstractEntity<Long> {
     @Column(name = "method_type", nullable = false)
     private MethodType methodType;
 
-    @Column(name = "provider_name")
-    private String providerName;
-
-    @Column(name = "account_number")
-    private String accountNumber;
-
-    @Column(name = "expiry_date")
-    private String expiryDate;
-
-    @Column(name = "is_default")
-    private Boolean isDefault = false;
-
     @Column(name = "is_active")
     private Boolean isActive = true;
 
