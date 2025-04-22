@@ -10,4 +10,6 @@ import com.danmin.home_service.model.Payments;
 @Repository
 public interface PaymentRepository extends JpaRepository<Payments, Long> {
     Optional<Payments> findByTransactionId(String transactionId);
+
+    Optional<Payments> findPaymentByBookingId(Long bookingId);
 }
