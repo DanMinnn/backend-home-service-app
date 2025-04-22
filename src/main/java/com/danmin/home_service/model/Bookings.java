@@ -51,7 +51,7 @@ public class Bookings extends AbstractEntity<Long> {
     private String workLoad;
 
     @Column(name = "total_price")
-    private Double totalPrice;
+    private BigDecimal totalPrice;
 
     @Column(name = "completed_at")
     @CreationTimestamp

@@ -27,7 +27,7 @@ public class BookingDTO implements Serializable {
 
     private String workLoad;
 
-    private Double totalPrice;
+    private BigDecimal totalPrice;
 
     @NotNull(message = "type must be not null")
     @EnumPattern(name = "booking_status", regexp = "pending|assigned|in_progress|completed|cancelled|rescheduled")

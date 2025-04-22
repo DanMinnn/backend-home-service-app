@@ -37,7 +37,7 @@ public class Payments extends AbstractEntityNoDate<Integer> {
     private PaymentMethods paymentMethod;
 
     @Column(name = "amount", nullable = false)
-    private Double amount;
+    private BigDecimal amount;
 
     @Column(name = "currency", length = 3)
     private String currency;

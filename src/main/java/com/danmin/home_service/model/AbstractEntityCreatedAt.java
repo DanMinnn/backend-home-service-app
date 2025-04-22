@@ -1,6 +1,6 @@
 package com.danmin.home_service.model;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -24,5 +24,5 @@ public abstract class AbstractEntityCreatedAt<T> {
 
     @Column(name = "created_at")
     @CreationTimestamp
-    private Date createdAt;
+    private LocalDateTime createdAt;
 }
