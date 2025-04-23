@@ -1,5 +1,6 @@
 package com.danmin.home_service.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 import org.springframework.stereotype.Service;
@@ -11,6 +12,7 @@ import com.danmin.home_service.common.ReviewerType;
 import com.danmin.home_service.dto.request.BookingDTO;
 import com.danmin.home_service.dto.request.ReviewDTO;
 import com.danmin.home_service.dto.response.BookingDetailResponse;
+import com.danmin.home_service.exception.BusinessException;
 import com.danmin.home_service.exception.ResourceNotFoundException;
 import com.danmin.home_service.model.Bookings;
 import com.danmin.home_service.model.Review;
@@ -23,6 +25,7 @@ import com.danmin.home_service.repository.ServiceRepository;
 import com.danmin.home_service.repository.TaskerRepository;
 import com.danmin.home_service.repository.UserRepository;
 import com.danmin.home_service.service.BookingService;
+import com.danmin.home_service.service.TaskerWalletService;
 import com.danmin.home_service.service.UserTypeService;
 
 import jakarta.transaction.Transactional;
@@ -40,6 +43,7 @@ public class BookingServiceImpl implements BookingService {
     private final TaskerRepository taskerRepository;
     private final ReviewRepository reviewRepository;
     private final UserTypeService userTypeService;
+    private final TaskerWalletService taskerWalletService;
 
     private Integer taskerAssigned = 0;
 
@@ -93,7 +97,8 @@ public class BookingServiceImpl implements BookingService {
             throw new ResourceNotFoundException("Tasker does not provide this service");
         }
 
-        if (tasker.getAvailabilityStatus().name().equals("available")) {
+        if (tasker.getAvailabilityStatus().name().equals("available")
+                && taskerWalletService.checkBalanceAccount(taskerId, bookingId)) {
             booking.setTasker(tasker);
             booking.setBookingStatus(BookingStatus.assigned);
             tasker.setAvailabilityStatus(AvailabilityStatus.busy);
@@ -153,6 +158,7 @@ public class BookingServiceImpl implements BookingService {
         booking.setBookingStatus(BookingStatus.cancelled);
         booking.setCancelledByType(CancelledByType.user);
         booking.setCancellationReason(cancelReason);
+        booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
 
     }
@@ -162,22 +168,34 @@ public class BookingServiceImpl implements BookingService {
 
         Bookings booking = getBookingById(bookingId);
 
-        if (taskerAssigned != 0) {
-            Long taskerId = booking.getTasker().getId().longValue();
+        Long taskerId = booking.getTasker().getId().longValue();
 
-            Tasker tasker = taskerRepository.findById(taskerId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Tasker not found with id: " + taskerId));
+        Tasker tasker = taskerRepository.findById(taskerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tasker not found with id: " + taskerId));
 
-            tasker.setAvailabilityStatus(AvailabilityStatus.available);
+        // Check cancellations in the last 7 days
+        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+        int cancelCount = bookingRepository.countCancelledBookingsByTaskerInLast7Days(taskerId, sevenDaysAgo);
 
-            taskerRepository.save(tasker);
-            taskerAssigned = 0;
+        if (cancelCount >= 2) {
+            throw new BusinessException(
+                    "You have exceeded the limit of 2 cancellations in 7 days. This job cannot be canceled.");
+        }
+
+        if (cancelCount == 1) {
+            log.warn("Tasker [{}] is canceling its 2nd job in 7 days. This is the last cancellation allowed.",
+                    taskerId);
         }
 
         booking.setBookingStatus(BookingStatus.cancelled);
         booking.setCancelledByType(CancelledByType.tasker);
         booking.setCancellationReason(cancelReason);
+        booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
+
+        tasker.setAvailabilityStatus(AvailabilityStatus.available);
+        taskerRepository.save(tasker);
+
     }
 
     @Override
