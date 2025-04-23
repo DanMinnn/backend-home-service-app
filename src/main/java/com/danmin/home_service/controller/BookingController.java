@@ -14,8 +14,11 @@ import com.danmin.home_service.service.BookingService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,13 +38,19 @@ public class BookingController {
 
     @Operation(summary = "Create booking")
     @PostMapping("/")
-    public ResponseData<?> createBooking(@RequestBody BookingDTO req) {
+    public ResponseData<?> createBooking(@RequestBody BookingDTO req, HttpServletRequest httpRequest) {
 
         log.info("Booking service is started");
 
         try {
-            bookingService.createBooking(req);
-            return new ResponseData<>(HttpStatus.ACCEPTED.value(), "Booked successfully");
+            Object result = bookingService.createBooking(req, httpRequest);
+
+            if (result instanceof Map && ((Map<?, ?>) result).containsKey("paymentUrl")) {
+
+                return new ResponseData(HttpStatus.ACCEPTED.value(), "Payment URL created", result);
+            } else {
+                return new ResponseData(HttpStatus.OK.value(), "Booking created successfully", result);
+            }
 
         } catch (Exception e) {
             log.error("Booked failure", e);

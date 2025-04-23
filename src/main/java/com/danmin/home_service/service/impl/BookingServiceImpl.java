@@ -1,33 +1,45 @@
 package com.danmin.home_service.service.impl;
 
+import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.danmin.home_service.common.AvailabilityStatus;
 import com.danmin.home_service.common.BookingStatus;
 import com.danmin.home_service.common.CancelledByType;
+import com.danmin.home_service.common.MethodType;
+import com.danmin.home_service.common.PaymentStatus;
 import com.danmin.home_service.common.ReviewerType;
 import com.danmin.home_service.dto.request.BookingDTO;
 import com.danmin.home_service.dto.request.ReviewDTO;
 import com.danmin.home_service.dto.response.BookingDetailResponse;
+import com.danmin.home_service.dto.response.ResponseData;
 import com.danmin.home_service.exception.BusinessException;
 import com.danmin.home_service.exception.ResourceNotFoundException;
 import com.danmin.home_service.model.Bookings;
+import com.danmin.home_service.model.Payments;
 import com.danmin.home_service.model.Review;
 import com.danmin.home_service.model.Services;
 import com.danmin.home_service.model.Tasker;
 import com.danmin.home_service.model.User;
 import com.danmin.home_service.repository.BookingRepository;
+import com.danmin.home_service.repository.PaymentRepository;
 import com.danmin.home_service.repository.ReviewRepository;
 import com.danmin.home_service.repository.ServiceRepository;
 import com.danmin.home_service.repository.TaskerRepository;
 import com.danmin.home_service.repository.UserRepository;
 import com.danmin.home_service.service.BookingService;
+import com.danmin.home_service.service.PaymentService;
 import com.danmin.home_service.service.TaskerWalletService;
+import com.danmin.home_service.service.UserWalletService;
 import com.danmin.home_service.service.UserTypeService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,19 +55,24 @@ public class BookingServiceImpl implements BookingService {
     private final TaskerRepository taskerRepository;
     private final ReviewRepository reviewRepository;
     private final UserTypeService userTypeService;
-    private final TaskerWalletService taskerWalletService;
 
-    private Integer taskerAssigned = 0;
+    private final TaskerWalletService taskerWalletService;
+    private final UserWalletService userWalletService;
+    private final PaymentService paymentService;
+    private final PaymentRepository paymentRepository;
 
     @Transactional(rollbackOn = Exception.class)
     @Override
-    public void createBooking(BookingDTO req) {
+    public Object createBooking(BookingDTO req, HttpServletRequest request)
+            throws UnsupportedEncodingException {
 
         User user = userRepository.findById(req.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + req.getUserId()));
 
         Services services = serviceRepository.findById(req.getServiceId())
                 .orElseThrow(() -> new ResourceNotFoundException("Service not found with id: " + req.getServiceId()));
+
+        String transactionId = String.valueOf(System.currentTimeMillis());
 
         Bookings bookings = Bookings.builder()
                 .user(user)
@@ -69,10 +86,57 @@ public class BookingServiceImpl implements BookingService {
                 .longitude(req.getLongitude())
                 .latitude(req.getLatitude())
                 .bookingStatus(BookingStatus.pending)
+                .paymentStatus("unpaid")
                 .cancellationReason(req.getCancellationReason())
                 .build();
 
-        bookingRepository.save(bookings);
+        if (req.getMethodType() == MethodType.bank_transfer) {
+
+            bookingRepository.save(bookings);
+            userWalletService.debitAccount(user.getId().longValue(), bookings.getTotalPrice());
+
+            paymentRepository.save(Payments.builder()
+                    .booking(bookings)
+                    .user(bookings.getUser())
+                    .tasker(bookings.getTasker())
+                    .amount(bookings.getTotalPrice())
+                    .currency("VND")
+                    .methodType(MethodType.bank_transfer)
+                    .status(PaymentStatus.completed)
+                    .transactionId(transactionId)
+                    .paymentGateway(MethodType.bank_transfer.toString()).build());
+
+            bookings.setPaymentStatus("paid");
+            bookingRepository.save(bookings);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("bookingId", bookings.getId());
+            response.put("status", "confirmed");
+            response.put("message", "Booking created and payment processed successfully");
+
+            return response;
+        } else if (req.getMethodType() == MethodType.vnpay) {
+            bookingRepository.save(bookings);
+            String paymentUrl = paymentService.createPaymentUrl(request, bookings.getId());
+
+            Map<String, String> response = new HashMap<>();
+            response.put("paymentUrl", paymentUrl);
+
+            bookings.setPaymentStatus("paid");
+            bookingRepository.save(bookings);
+
+            return response;
+        } else {
+            bookingRepository.save(bookings);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("bookingId", bookings.getId());
+            response.put("status", "unpaid");
+            response.put("message", "Booking created and payment processed successfully");
+
+            return response;
+        }
+
     }
 
     private Bookings getBookingById(long bookingId) {
@@ -106,8 +170,6 @@ public class BookingServiceImpl implements BookingService {
         }
 
         bookingRepository.save(booking);
-
-        taskerAssigned = tasker.getId();
     }
 
     @Override
@@ -127,6 +189,7 @@ public class BookingServiceImpl implements BookingService {
                 .cancelBy(booking.getCancelledByType().name())
                 .cancelReason(booking.getCancellationReason())
                 .status(booking.getBookingStatus().name())
+                .paymentStatus(booking.getPaymentStatus())
                 .build();
 
         if (booking.getTasker() != null) {
@@ -143,17 +206,17 @@ public class BookingServiceImpl implements BookingService {
 
         Bookings booking = getBookingById(bookingId);
 
-        if (taskerAssigned != 0) {
-            Long taskerId = booking.getTasker().getId().longValue();
+        if (booking.getBookingStatus().equals(BookingStatus.assigned)) {
 
+            Long taskerId = booking.getTasker().getId().longValue();
             Tasker tasker = taskerRepository.findById(taskerId)
                     .orElseThrow(() -> new ResourceNotFoundException("Tasker not found with id: " + taskerId));
 
             tasker.setAvailabilityStatus(AvailabilityStatus.available);
-
             taskerRepository.save(tasker);
-            taskerAssigned = 0;
         }
+
+        userWalletService.refund(booking.getId());
 
         booking.setBookingStatus(BookingStatus.cancelled);
         booking.setCancelledByType(CancelledByType.user);
@@ -209,11 +272,13 @@ public class BookingServiceImpl implements BookingService {
 
         booking.setCompletedAt(new Date());
         booking.setBookingStatus(BookingStatus.completed);
-        tasker.setAvailabilityStatus(AvailabilityStatus.available);
+        bookingRepository.save(booking);
 
+        tasker.setAvailabilityStatus(AvailabilityStatus.available);
         taskerRepository.save(tasker);
 
-        bookingRepository.save(booking);
+        taskerWalletService.incomeCompleteTask(booking.getId(), taskerId);
+
     }
 
     @Transactional(rollbackOn = Exception.class)

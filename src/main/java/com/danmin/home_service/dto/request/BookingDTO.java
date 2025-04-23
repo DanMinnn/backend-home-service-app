@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 
 import com.danmin.home_service.common.BookingStatus;
 import com.danmin.home_service.common.CancelledByType;
+import com.danmin.home_service.common.MethodType;
 import com.danmin.home_service.dto.validator.EnumPattern;
 
 import jakarta.validation.constraints.NotNull;
@@ -47,4 +48,6 @@ public class BookingDTO implements Serializable {
     private BigDecimal longitude;
 
     private BigDecimal latitude;
+
+    private MethodType methodType;
 }

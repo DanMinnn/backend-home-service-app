@@ -22,10 +22,8 @@ import com.danmin.home_service.common.PaymentStatus;
 import com.danmin.home_service.config.VnPayConfig;
 import com.danmin.home_service.exception.ResourceNotFoundException;
 import com.danmin.home_service.model.Bookings;
-import com.danmin.home_service.model.PaymentMethods;
 import com.danmin.home_service.model.Payments;
 import com.danmin.home_service.repository.BookingRepository;
-import com.danmin.home_service.repository.PaymentMethodRepository;
 import com.danmin.home_service.repository.PaymentRepository;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,7 +38,6 @@ public class PaymentService {
     private final VnPayConfig vnPayConfig;
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
-    private final PaymentMethodRepository paymentMethodRepository;
 
     public String createPaymentUrl(HttpServletRequest request, Long bookingId) throws UnsupportedEncodingException {
 
@@ -111,16 +108,13 @@ public class PaymentService {
 
     private void createPendingPayment(Bookings booking, String transactionId) {
 
-        // implement payment_method_id yet
-        PaymentMethods paymentMethods = paymentMethodRepository.findById(1L).orElse(null);
-
         paymentRepository.save(Payments.builder()
                 .booking(booking)
                 .user(booking.getUser())
                 .tasker(booking.getTasker())
                 .amount(booking.getTotalPrice())
                 .currency("VND")
-                .paymentMethod(paymentMethods)
+                .methodType(MethodType.vnpay)
                 .status(PaymentStatus.pending)
                 .transactionId(transactionId)
                 .paymentGateway(MethodType.vnpay.toString()).build());

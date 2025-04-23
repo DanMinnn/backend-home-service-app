@@ -84,4 +84,7 @@ public class Bookings extends AbstractEntity<Long> {
 
     @Column(name = "recurring_pattern")
     private String recurringPattern;
+
+    @Column(name = "payment_status")
+    private String paymentStatus;
 }

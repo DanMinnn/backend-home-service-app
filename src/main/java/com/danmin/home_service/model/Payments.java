@@ -6,6 +6,7 @@ import java.util.Date;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import com.danmin.home_service.common.MethodType;
 import com.danmin.home_service.common.PaymentStatus;
 
 import jakarta.persistence.*;
@@ -32,9 +33,10 @@ public class Payments extends AbstractEntityNoDate<Integer> {
     @JoinColumn(name = "tasker_id", nullable = true)
     private Tasker tasker;
 
-    @ManyToOne
-    @JoinColumn(name = "payment_method_id", nullable = false)
-    private PaymentMethods paymentMethod;
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "method_type")
+    private MethodType methodType;
 
     @Column(name = "amount", nullable = false)
     private BigDecimal amount;
