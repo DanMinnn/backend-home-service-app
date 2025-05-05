@@ -68,6 +68,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return TokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .expiresIn(600)
+                .isNew(true)
+                .hasUsernamePassword(true)
                 .build();
     }
 

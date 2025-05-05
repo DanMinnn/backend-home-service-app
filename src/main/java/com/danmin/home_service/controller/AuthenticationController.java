@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.danmin.home_service.dto.request.ChangePasswordDTO;
 import com.danmin.home_service.dto.request.SignInRequest;
+import com.danmin.home_service.dto.response.ResponseData;
 import com.danmin.home_service.dto.response.TokenResponse;
 import com.danmin.home_service.service.AuthenticationService;
 
@@ -15,6 +16,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,16 +32,18 @@ public class AuthenticationController {
 
     @Operation(summary = "Access token", description = "Get access token and refresh token by email and password")
     @PostMapping("/access-token")
-    public TokenResponse getAccessToken(@Valid @RequestBody SignInRequest request) {
+    public ResponseData<TokenResponse> getAccessToken(@Valid @RequestBody SignInRequest request) {
         log.info("Request get access token {}", request.getEmail());
-        return authenticationService.getAccessToken(request);
+        return new ResponseData<TokenResponse>(HttpStatus.OK.value(), "Login successfully",
+                authenticationService.getAccessToken(request));
     }
 
     @Operation(summary = "Refresh token", description = "Get new access token by refresh token")
     @PostMapping("/refresh-token")
-    public TokenResponse getRefreshToken(@Valid @RequestBody String refreshToken) {
+    public ResponseData<TokenResponse> getRefreshToken(@Valid @RequestBody String refreshToken) {
         log.info("Request refresh token");
-        return authenticationService.getRefreshToken(refreshToken);
+        return new ResponseData<TokenResponse>(HttpStatus.OK.value(), "Get refresh token",
+                authenticationService.getRefreshToken(refreshToken));
     }
 
     @Operation(summary = "Forgot password")

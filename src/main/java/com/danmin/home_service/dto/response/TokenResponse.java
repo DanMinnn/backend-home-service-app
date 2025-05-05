@@ -12,4 +12,8 @@ import lombok.Setter;
 public class TokenResponse implements Serializable {
     private String accessToken;
     private String refreshToken;
+    private String tokenType;
+    private long expiresIn;
+    private boolean isNew;
+    private boolean hasUsernamePassword;
 }
