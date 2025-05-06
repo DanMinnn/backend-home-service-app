@@ -1,6 +1,11 @@
 package com.danmin.home_service.service.impl;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -119,13 +124,34 @@ public class ServicesServiceImpl implements ServicesService {
 
         Pageable pageable = PageRequest.of(page, pageSize);
 
-        Page<ServiceCategory> services = sCatetoryRepository.findAllWithServices(pageable);
+        Page<ServiceCategory> categoryPage = sCatetoryRepository.findAllServiceCategories(pageable);
 
-        List<ServiceResponse> responses = services.stream().map(service -> ServiceResponse.builder()
-                .id(service.getId())
-                .name(service.getName())
-                .isActive(service.getIsActive())
-                .services(service.getServices()).build()).toList();
+        List<Integer> categoryIds = categoryPage.getContent().stream()
+                .map(ServiceCategory::getId)
+                .collect(Collectors.toList());
+
+        List<ServiceCategory> categoriesWithSortedServices = new ArrayList<>();
+
+        if (!categoryIds.isEmpty()) {
+            categoriesWithSortedServices = sCatetoryRepository.findCategoriesWithSortedServicesByIds(categoryIds);
+        }
+
+        List<ServiceResponse> responses = categoriesWithSortedServices.stream()
+                .map(category -> {
+                    // Sort services by name
+                    List<Services> sortedServices = new ArrayList<>(category.getServices());
+                    sortedServices.sort(Comparator.comparing(Services::getName, String.CASE_INSENSITIVE_ORDER));
+                    Set<Services> orderedServices = new LinkedHashSet<>(sortedServices);
+
+                    // Create response with sorted services
+                    return ServiceResponse.builder()
+                            .id(category.getId())
+                            .name(category.getName())
+                            .isActive(category.getIsActive())
+                            .services(orderedServices) // Use sorted services here
+                            .build();
+                })
+                .collect(Collectors.toList());
 
         return PageResponse.builder()
                 .pageNo(pageNo)
