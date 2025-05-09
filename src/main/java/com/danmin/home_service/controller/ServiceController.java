@@ -122,10 +122,19 @@ public class ServiceController {
     @GetMapping("/list-service")
     public ResponseData<?> getAllService(@RequestParam(defaultValue = "0", required = false) int pageNo,
             @RequestParam(defaultValue = "10", required = false) int pageSize) {
-        log.info("Getting all user ");
+        log.info("Getting all service ");
 
         return new ResponseData<>(HttpStatus.OK.value(), "Service Category",
                 servicesService.getAllService(pageNo, pageSize));
+    }
+
+    @Operation(summary = "Get all service with packages")
+    @GetMapping("/list-service-package/{service-id}")
+    public ResponseData<?> getAllServiceWithPackages(@PathVariable(value = "service-id") Long serviceId) {
+        log.info("Getting all service with packages ");
+
+        return new ResponseData<>(HttpStatus.OK.value(), "Service with packages",
+                servicesService.getServiceWithPackages(serviceId));
     }
 
 }

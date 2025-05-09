@@ -3,6 +3,7 @@ package com.danmin.home_service.service;
 import com.danmin.home_service.dto.request.ServiceCategoryDTO;
 import com.danmin.home_service.dto.request.ServiceDTO;
 import com.danmin.home_service.dto.response.PageResponse;
+import com.danmin.home_service.dto.response.ServicePackageResponse;
 
 public interface ServicesService {
     void addServiceCategory(ServiceCategoryDTO req);
@@ -18,4 +19,6 @@ public interface ServicesService {
     void deleteService(long serviceId);
 
     PageResponse<?> getAllService(int pageNo, int pageSize);
+
+    ServicePackageResponse getServiceWithPackages(Long id);
 }

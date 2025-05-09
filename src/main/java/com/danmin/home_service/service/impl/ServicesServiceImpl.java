@@ -15,9 +15,15 @@ import org.springframework.stereotype.Service;
 import com.danmin.home_service.dto.request.ServiceCategoryDTO;
 import com.danmin.home_service.dto.request.ServiceDTO;
 import com.danmin.home_service.dto.response.PageResponse;
+import com.danmin.home_service.dto.response.ServicePackageResponse;
 import com.danmin.home_service.dto.response.ServiceResponse;
+import com.danmin.home_service.dto.response.CategoriesWithServicesResponse;
+import com.danmin.home_service.dto.response.PackageResponse;
+import com.danmin.home_service.dto.response.PackageVariantsResponse;
 import com.danmin.home_service.exception.ResourceNotFoundException;
+import com.danmin.home_service.model.PackageVariants;
 import com.danmin.home_service.model.ServiceCategory;
+import com.danmin.home_service.model.ServicePackages;
 import com.danmin.home_service.model.Services;
 import com.danmin.home_service.repository.ServiceCatetoryRepository;
 import com.danmin.home_service.repository.ServiceRepository;
@@ -81,7 +87,7 @@ public class ServicesServiceImpl implements ServicesService {
         ServiceCategory serviceCategory = getCategoryId(categoryId);
 
         Services services = Services.builder().category(serviceCategory).name(req.getName()).description(req.getDes())
-                .basePrice(req.getBasePrice()).isActive(req.getIsActive()).build();
+                .isActive(req.getIsActive()).build();
         serviceRepository.save(services);
     }
 
@@ -94,10 +100,6 @@ public class ServicesServiceImpl implements ServicesService {
         }
 
         services.setDescription(req.getDes());
-
-        if (req.getBasePrice() != null) {
-            services.setBasePrice(req.getBasePrice());
-        }
 
         if (req.getIsActive() != null) {
             services.setIsActive(req.getIsActive());
@@ -136,19 +138,28 @@ public class ServicesServiceImpl implements ServicesService {
             categoriesWithSortedServices = sCatetoryRepository.findCategoriesWithSortedServicesByIds(categoryIds);
         }
 
-        List<ServiceResponse> responses = categoriesWithSortedServices.stream()
+        List<CategoriesWithServicesResponse> responses = categoriesWithSortedServices.stream()
                 .map(category -> {
                     // Sort services by name
                     List<Services> sortedServices = new ArrayList<>(category.getServices());
                     sortedServices.sort(Comparator.comparing(Services::getName, String.CASE_INSENSITIVE_ORDER));
-                    Set<Services> orderedServices = new LinkedHashSet<>(sortedServices);
 
-                    // Create response with sorted services
-                    return ServiceResponse.builder()
+                    Set<ServiceResponse> services = sortedServices.stream()
+                            .map(
+                                    service -> ServiceResponse.builder()
+                                            .id(service.getId())
+                                            .name(service.getName())
+                                            .description(service.getDescription())
+                                            .icon(service.getIcon())
+                                            .isActive(service.getIsActive())
+                                            .build())
+                            .collect(Collectors.toCollection(LinkedHashSet::new));
+
+                    return CategoriesWithServicesResponse.builder()
                             .id(category.getId())
                             .name(category.getName())
                             .isActive(category.getIsActive())
-                            .services(orderedServices) // Use sorted services here
+                            .services(services)
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -157,6 +168,47 @@ public class ServicesServiceImpl implements ServicesService {
                 .pageNo(pageNo)
                 .pageSize(pageSize)
                 .items(responses)
+                .build();
+    }
+
+    @Override
+    public ServicePackageResponse getServiceWithPackages(Long id) {
+
+        Services service = serviceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Service not found"));
+
+        List<PackageResponse> sortedPackages = service.getServicePackages().stream()
+                .sorted(Comparator.comparing(ServicePackages::getId))
+                .map(
+                        pkg -> {
+                            Set<PackageVariantsResponse> sortedVariants = pkg.getPackageVariants().stream()
+                                    .sorted(Comparator.comparing(PackageVariants::getId))
+                                    .map(variant -> PackageVariantsResponse.builder()
+                                            .id(variant.getId())
+                                            .name(variant.getVariantName())
+                                            .description(variant.getVariantDescription())
+                                            .additionalPrice(variant.getAdditionalPrice())
+                                            .build())
+                                    .collect(Collectors.toCollection(LinkedHashSet::new));
+
+                            return PackageResponse.builder()
+                                    .id(pkg.getId())
+                                    .name(pkg.getPackageName())
+                                    .description(pkg.getPackageDescription())
+                                    .basePrice(pkg.getBasePrice())
+                                    .variants(sortedVariants)
+                                    .build();
+                        })
+                .collect(Collectors.toList());
+
+        // Convert the sorted list back to a set to match the expected return type
+        Set<PackageResponse> responses = new LinkedHashSet<>(sortedPackages);
+
+        return ServicePackageResponse.builder()
+                .id(service.getId())
+                .name(service.getName())
+                .isActive(service.getIsActive())
+                .servicePackages(responses)
                 .build();
     }
 
