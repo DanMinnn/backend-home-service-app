@@ -6,7 +6,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.danmin.home_service.common.AvailabilityStatus;
@@ -18,18 +17,19 @@ import com.danmin.home_service.common.ReviewerType;
 import com.danmin.home_service.dto.request.BookingDTO;
 import com.danmin.home_service.dto.request.ReviewDTO;
 import com.danmin.home_service.dto.response.BookingDetailResponse;
-import com.danmin.home_service.dto.response.ResponseData;
 import com.danmin.home_service.exception.BusinessException;
 import com.danmin.home_service.exception.ResourceNotFoundException;
 import com.danmin.home_service.model.Bookings;
 import com.danmin.home_service.model.Payments;
 import com.danmin.home_service.model.Review;
+import com.danmin.home_service.model.ServicePackages;
 import com.danmin.home_service.model.Services;
 import com.danmin.home_service.model.Tasker;
 import com.danmin.home_service.model.User;
 import com.danmin.home_service.repository.BookingRepository;
 import com.danmin.home_service.repository.PaymentRepository;
 import com.danmin.home_service.repository.ReviewRepository;
+import com.danmin.home_service.repository.ServicePackageRepository;
 import com.danmin.home_service.repository.ServiceRepository;
 import com.danmin.home_service.repository.TaskerRepository;
 import com.danmin.home_service.repository.UserRepository;
@@ -61,6 +61,8 @@ public class BookingServiceImpl implements BookingService {
     private final PaymentService paymentService;
     private final PaymentRepository paymentRepository;
 
+    private final ServicePackageRepository servicePackageRepository;
+
     @Transactional(rollbackOn = Exception.class)
     @Override
     public Object createBooking(BookingDTO req, HttpServletRequest request)
@@ -72,15 +74,20 @@ public class BookingServiceImpl implements BookingService {
         Services services = serviceRepository.findById(req.getServiceId())
                 .orElseThrow(() -> new ResourceNotFoundException("Service not found with id: " + req.getServiceId()));
 
+        ServicePackages servicesPackage = servicePackageRepository.findById(req.getPackageId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Service package not found with id: " + req.getPackageId()));
+
         String transactionId = String.valueOf(System.currentTimeMillis());
 
         Bookings bookings = Bookings.builder()
                 .user(user)
                 .service(services)
+                .packages(servicesPackage)
                 .address(req.getAddress())
                 .duration(req.getDuration())
                 .scheduledDate(req.getScheduledDate())
-                .workLoad(req.getWorkLoad())
+                .taskDetails(req.getTaskDetails())
                 .totalPrice(req.getTotalPrice())
                 .notes(req.getNotes())
                 .longitude(req.getLongitude())
@@ -88,6 +95,7 @@ public class BookingServiceImpl implements BookingService {
                 .bookingStatus(BookingStatus.pending)
                 .paymentStatus("unpaid")
                 .cancellationReason(req.getCancellationReason())
+                .cancelledByType(req.getCancelledByType())
                 .build();
 
         if (req.getMethodType() == MethodType.bank_transfer) {
@@ -183,7 +191,7 @@ public class BookingServiceImpl implements BookingService {
                 .phoneNumber(booking.getUser().getPhoneNumber())
                 .serviceName(booking.getService().getName())
                 .scheduleDate(booking.getScheduledDate())
-                .workLoad(booking.getWorkLoad())
+                .taskDetails(booking.getTaskDetails())
                 .totalPrice(booking.getTotalPrice())
                 .duration(booking.getDuration())
                 .cancelBy(booking.getCancelledByType().name())
@@ -272,6 +280,7 @@ public class BookingServiceImpl implements BookingService {
 
         booking.setCompletedAt(new Date());
         booking.setBookingStatus(BookingStatus.completed);
+        booking.setPaymentStatus("paid");
         bookingRepository.save(booking);
 
         tasker.setAvailabilityStatus(AvailabilityStatus.available);

@@ -2,6 +2,7 @@ package com.danmin.home_service.dto.response;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.Map;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,7 +18,7 @@ public class BookingDetailResponse implements Serializable {
     private Long bookingId;
     private String scheduleDate;
     private String status;
-    private String workLoad;
+    private Map<String, Object> taskDetails;
     private BigDecimal totalPrice;
     private String duration;
     private String username;

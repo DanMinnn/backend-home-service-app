@@ -2,15 +2,18 @@ package com.danmin.home_service.model;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.Map;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
 
 import com.danmin.home_service.common.BookingStatus;
 import com.danmin.home_service.common.CancelledByType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -38,6 +41,11 @@ public class Bookings extends AbstractEntity<Long> {
     @JoinColumn(name = "service_id")
     private Services service;
 
+    @ManyToOne
+    @JsonIgnore
+    @JoinColumn(name = "package_id")
+    private ServicePackages packages;
+
     @Column(name = "address_name")
     private String address;
 
@@ -47,8 +55,9 @@ public class Bookings extends AbstractEntity<Long> {
     @Column(name = "duration")
     private String duration;
 
-    @Column(name = "work_load")
-    private String workLoad;
+    @Type(JsonBinaryType.class)
+    @Column(name = "task_details", columnDefinition = "jsonb")
+    private Map<String, Object> taskDetails;
 
     @Column(name = "total_price")
     private BigDecimal totalPrice;

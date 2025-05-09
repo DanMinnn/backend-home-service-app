@@ -2,6 +2,7 @@ package com.danmin.home_service.dto.request;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.Map;
 
 import com.danmin.home_service.common.BookingStatus;
 import com.danmin.home_service.common.CancelledByType;
@@ -20,13 +21,15 @@ public class BookingDTO implements Serializable {
 
     private Long serviceId;
 
+    private Long packageId;
+
     private String address;
 
     private String scheduledDate;
 
     private String duration;
 
-    private String workLoad;
+    private Map<String, Object> taskDetails;
 
     private BigDecimal totalPrice;
 
