@@ -19,9 +19,11 @@ public class ServiceCategory extends AbstractEntityNoDate<Integer> {
     private String name;
 
     @Column(name = "is_active")
+    @Builder.Default
     private Boolean isActive = true;
 
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<Services> services = new HashSet<>();
 
 }

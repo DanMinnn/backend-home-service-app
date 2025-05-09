@@ -1,7 +1,8 @@
 package com.danmin.home_service.model;
 
-import java.math.BigDecimal;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -31,11 +32,13 @@ public class Services extends AbstractEntity<Long> {
     @Column(name = "icon")
     private String icon;
 
-    @Column(name = "base_price", nullable = false)
-    private BigDecimal basePrice;
-
     @Column(name = "is_active")
+    @Builder.Default
     private Boolean isActive = true;
+
+    @OneToMany(mappedBy = "services", fetch = FetchType.EAGER)
+    @Builder.Default
+    private Set<ServicePackages> servicePackages = new HashSet<>();
 
     public static Comparator<Services> compareByName() {
         return Comparator.comparing(Services::getName,
