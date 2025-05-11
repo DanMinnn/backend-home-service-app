@@ -33,6 +33,18 @@ public class UserController {
 
     private final UserService userService;
 
+    @Operation(summary = "Get profile user")
+    @GetMapping("/profile/{email}")
+    public ResponseData<?> getProfileUser(@PathVariable(value = "email") String email) {
+
+        try {
+            return new ResponseData<>(HttpStatus.OK.value(), "User profile", userService.getProfileUser(email));
+        } catch (Exception e) {
+            log.error("errorMessage={}", e.getMessage(), e.getCause());
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+        }
+    }
+
     @Operation(summary = "Update user")
     @PutMapping("/update/{userId}")
     public ResponseData<?> updateUSer(@PathVariable(value = "userId") long userId, @Valid @RequestBody UserDTO req) {

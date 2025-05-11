@@ -12,6 +12,7 @@ import com.danmin.home_service.dto.request.AddressDTO;
 import com.danmin.home_service.dto.request.UserDTO;
 import com.danmin.home_service.dto.response.PageResponse;
 import com.danmin.home_service.dto.response.UserResponse;
+import com.danmin.home_service.exception.ResourceNotFoundException;
 import com.danmin.home_service.model.Address;
 import com.danmin.home_service.model.BaseUser;
 import com.danmin.home_service.model.Tasker;
@@ -177,6 +178,21 @@ public class UserServiceImpl implements UserService {
 
         addressRepository.save(userAddress);
 
+    }
+
+    @Override
+    public UserResponse getProfileUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Not found user with email"));
+
+        return UserResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .firstLastName(user.getFirstLastName())
+                .phoneNumber(user.getPhoneNumber())
+                .isActive(user.getIsActive())
+                .lastLogin(user.getLastLogin())
+                .build();
     }
 
 }

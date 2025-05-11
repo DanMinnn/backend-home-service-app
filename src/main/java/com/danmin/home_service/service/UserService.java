@@ -3,6 +3,7 @@ package com.danmin.home_service.service;
 import com.danmin.home_service.dto.request.AddressDTO;
 import com.danmin.home_service.dto.request.UserDTO;
 import com.danmin.home_service.dto.response.PageResponse;
+import com.danmin.home_service.dto.response.UserResponse;
 
 public interface UserService {
 
@@ -19,4 +20,6 @@ public interface UserService {
     PageResponse<?> getAllTaskerWithSortByColumnsAndSearch(int pageNo, int pageSize, String search, String sortBy);
 
     void saveAddress(long userId, AddressDTO address);
+
+    UserResponse getProfileUser(String email);
 }
