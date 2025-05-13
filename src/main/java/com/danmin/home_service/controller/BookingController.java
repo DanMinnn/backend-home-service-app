@@ -37,7 +37,7 @@ public class BookingController {
     private final BookingService bookingService;
 
     @Operation(summary = "Create booking")
-    @PostMapping("/")
+    @PostMapping("/create-booking")
     public ResponseData<?> createBooking(@RequestBody BookingDTO req, HttpServletRequest httpRequest) {
 
         log.info("Booking service is started");

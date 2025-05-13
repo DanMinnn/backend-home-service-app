@@ -120,7 +120,6 @@ public class BookingServiceImpl implements BookingService {
             Map<String, Object> response = new HashMap<>();
             response.put("bookingId", bookings.getId());
             response.put("status", "confirmed");
-            response.put("message", "Booking created and payment processed successfully");
 
             return response;
         } else if (req.getMethodType() == MethodType.vnpay) {
@@ -140,7 +139,6 @@ public class BookingServiceImpl implements BookingService {
             Map<String, Object> response = new HashMap<>();
             response.put("bookingId", bookings.getId());
             response.put("status", "unpaid");
-            response.put("message", "Booking created and payment processed successfully");
 
             return response;
         }
