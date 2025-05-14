@@ -306,6 +306,106 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    public PageResponse<?> getBookingFilteringStatus(int pageNo, int pageSize, Integer userId, String status) {
+        try {
+            // Convert the status string to BookingStatus enum
+            BookingStatus bookingStatus = BookingStatus.valueOf(status.toLowerCase());
+
+            // Fetch bookings for the user with the specified status
+            List<Bookings> filteredBookings = bookingRepository.findBookingsByUserIdAndStatus(userId, bookingStatus);
+
+            // Apply the same sorting logic for dates as in getBookingDetail
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            LocalDateTime now = LocalDateTime.now();
+
+            // Sort by date proximity - for future dates, nearest first; for past dates,
+            // most recent first
+            List<Bookings> sortedBookings = filteredBookings.stream()
+                    .sorted((b1, b2) -> {
+                        // Parse scheduled dates
+                        LocalDateTime date1 = null;
+                        LocalDateTime date2 = null;
+
+                        try {
+                            date1 = LocalDateTime.parse(b1.getScheduledDate(), formatter);
+                        } catch (Exception e) {
+                            date1 = LocalDateTime.MAX;
+                        }
+
+                        try {
+                            date2 = LocalDateTime.parse(b2.getScheduledDate(), formatter);
+                        } catch (Exception e) {
+                            date2 = LocalDateTime.MAX;
+                        }
+
+                        boolean date1IsFuture = date1.isAfter(now);
+                        boolean date2IsFuture = date2.isAfter(now);
+
+                        // Future dates before past dates
+                        if (date1IsFuture && !date2IsFuture) {
+                            return -1;
+                        } else if (!date1IsFuture && date2IsFuture) {
+                            return 1;
+                        }
+
+                        // Both dates in future or both in past, sort by proximity to now
+                        if (date1IsFuture) {
+                            // Both in future, nearest first
+                            return date1.compareTo(date2);
+                        } else {
+                            // Both in past, newest first
+                            return date2.compareTo(date1);
+                        }
+                    })
+                    .collect(Collectors.toList());
+
+            // Create pageable results
+            int start = pageNo > 0 ? (pageNo - 1) * pageSize : 0;
+            int end = Math.min(start + pageSize, sortedBookings.size());
+
+            List<Bookings> pagedBookings = sortedBookings.subList(start, end);
+
+            // Map to DTOs
+            List<BookingDetailResponse> bookingDetails = pagedBookings.stream()
+                    .map(booking -> {
+                        BookingDetailResponse response = BookingDetailResponse.builder()
+                                .bookingId(booking.getId())
+                                .username(booking.getUser().getFirstLastName())
+                                .phoneNumber(booking.getUser().getPhoneNumber())
+                                .serviceName(booking.getService().getName())
+                                .scheduleDate(booking.getScheduledDate())
+                                .taskDetails(booking.getTaskDetails())
+                                .totalPrice(booking.getTotalPrice())
+                                .duration(booking.getDuration())
+                                .address(booking.getAddress())
+                                .cancelBy(booking.getCancelledByType().name())
+                                .cancelReason(booking.getCancellationReason())
+                                .status(booking.getBookingStatus().name())
+                                .paymentStatus(booking.getPaymentStatus())
+                                .build();
+
+                        if (booking.getTasker() != null) {
+                            response.setTaskerName(booking.getTasker().getFirstLastName());
+                            response.setTaskerPhone(booking.getTasker().getPhoneNumber());
+                        }
+
+                        return response;
+                    })
+                    .collect(Collectors.toList());
+
+            return PageResponse.builder()
+                    .pageNo(pageNo)
+                    .pageSize(pageSize)
+                    .items(bookingDetails)
+                    .build();
+
+        } catch (IllegalArgumentException e) {
+            // Handle invalid status parameter
+            throw new IllegalArgumentException("Invalid booking status: " + status);
+        }
+    }
+
+    @Override
     public void cancelBookingByUser(long bookingId, String cancelReason) {
 
         Bookings booking = getBookingById(bookingId);

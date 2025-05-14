@@ -17,6 +17,8 @@ public interface BookingService {
 
     PageResponse<?> getBookingDetail(int pageNo, int pageSize, Integer userId);
 
+    PageResponse<?> getBookingFilteringStatus(int pageNo, int pageSize, Integer userId, String status);
+
     void cancelBookingByUser(long bookingId, String cancelReason);
 
     void cancelBookingByTasker(long bookingId, String cancelReason);

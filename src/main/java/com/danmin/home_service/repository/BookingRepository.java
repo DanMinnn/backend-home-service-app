@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.danmin.home_service.common.BookingStatus;
 import com.danmin.home_service.model.Bookings;
 
 @Repository
@@ -37,10 +38,14 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
         int countCancelledBookingsByTaskerInLast7Days(@Param("taskerId") Long taskerId,
                         @Param("sevenDaysAgo") LocalDateTime sevenDaysAgo);
 
-        /**
-         * Finds all bookings for a user without any sorting.
-         * The sorting will be handled in the service layer.
-         */
+        // Option to fetch bookings and handle sorting in service layer
         @Query("SELECT b FROM Bookings b WHERE b.user.id = :userId")
         List<Bookings> findAllBookingsByUserId(@Param("userId") Integer userId);
+
+        /**
+         * Finds all bookings for a user with a specific status
+         */
+        @Query("SELECT b FROM Bookings b WHERE b.user.id = :userId AND b.bookingStatus = :status")
+        List<Bookings> findBookingsByUserIdAndStatus(@Param("userId") Integer userId,
+                        @Param("status") BookingStatus status);
 }
