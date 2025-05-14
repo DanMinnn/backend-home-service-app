@@ -4,7 +4,7 @@ import java.io.UnsupportedEncodingException;
 
 import com.danmin.home_service.dto.request.BookingDTO;
 import com.danmin.home_service.dto.request.ReviewDTO;
-import com.danmin.home_service.dto.response.BookingDetailResponse;
+import com.danmin.home_service.dto.response.PageResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -15,7 +15,7 @@ public interface BookingService {
 
     void assignTasker(long bookingId, long taskerId);
 
-    BookingDetailResponse getBookingDetail(long bookingId);
+    PageResponse<?> getBookingDetail(int pageNo, int pageSize, Integer userId);
 
     void cancelBookingByUser(long bookingId, String cancelReason);
 

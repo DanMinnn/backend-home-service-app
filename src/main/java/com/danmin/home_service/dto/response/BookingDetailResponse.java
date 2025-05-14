@@ -29,5 +29,6 @@ public class BookingDetailResponse implements Serializable {
     private String taskerName;
     private String taskerPhone;
     private String paymentStatus;
+    private String address;
 
 }

@@ -3,7 +3,7 @@ package com.danmin.home_service.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
+import com.danmin.home_service.config.VnPayConfig;
 import com.danmin.home_service.dto.request.BookingDTO;
 import com.danmin.home_service.dto.request.ReviewDTO;
 import com.danmin.home_service.dto.response.BookingDetailResponse;
@@ -11,7 +11,7 @@ import com.danmin.home_service.dto.response.ResponseData;
 import com.danmin.home_service.dto.response.ResponseError;
 import com.danmin.home_service.exception.ResourceNotFoundException;
 import com.danmin.home_service.service.BookingService;
-
+import com.danmin.home_service.service.UserDetailService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,6 +33,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Tag(name = "Booking Controller")
 @RequestMapping("/booking")
 public class BookingController {
+
+    private final UserDetailService userDetailService;
+
+    private final VnPayConfig vnPayConfig;
 
     private final BookingService bookingService;
 
@@ -78,15 +82,17 @@ public class BookingController {
     }
 
     @Operation(summary = "Booking details")
-    @GetMapping("/booking-detail/{bookingId}")
+    @GetMapping("/{userId}/booking-detail/")
 
-    public ResponseData<BookingDetailResponse> getBookingDetail(@PathVariable(value = "bookingId") Long bookingId) {
+    public ResponseData<?> getBookingDetail(@PathVariable(value = "userId") Integer userId,
+            @RequestParam(defaultValue = "0", required = false) int pageNo,
+            @RequestParam(defaultValue = "10", required = false) int pageSize) {
 
-        log.info("Getting booking detail with booking id={}", bookingId);
+        log.info("Getting booking detail with booking id={}", userId);
 
         try {
             return new ResponseData<>(HttpStatus.OK.value(), "Booking detail",
-                    bookingService.getBookingDetail(bookingId));
+                    bookingService.getBookingDetail(pageNo, pageSize, userId));
         } catch (ResourceNotFoundException e) {
             log.error("errorMessage={}", e.getMessage(), e.getCause());
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());

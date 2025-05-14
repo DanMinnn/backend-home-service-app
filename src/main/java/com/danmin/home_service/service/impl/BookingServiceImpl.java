@@ -2,9 +2,12 @@ package com.danmin.home_service.service.impl;
 
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -17,6 +20,7 @@ import com.danmin.home_service.common.ReviewerType;
 import com.danmin.home_service.dto.request.BookingDTO;
 import com.danmin.home_service.dto.request.ReviewDTO;
 import com.danmin.home_service.dto.response.BookingDetailResponse;
+import com.danmin.home_service.dto.response.PageResponse;
 import com.danmin.home_service.exception.BusinessException;
 import com.danmin.home_service.exception.ResourceNotFoundException;
 import com.danmin.home_service.model.Bookings;
@@ -95,7 +99,7 @@ public class BookingServiceImpl implements BookingService {
                 .bookingStatus(BookingStatus.pending)
                 .paymentStatus("unpaid")
                 .cancellationReason(req.getCancellationReason())
-                .cancelledByType(req.getCancelledByType())
+                .cancelledByType(CancelledByType.completed)
                 .build();
 
         if (req.getMethodType() == MethodType.bank_transfer) {
@@ -179,32 +183,126 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingDetailResponse getBookingDetail(long bookingId) {
+    public PageResponse<?> getBookingDetail(int pageNo, int pageSize, Integer userId) {
+        // Fetch all bookings for the user
+        List<Bookings> allBookings = bookingRepository.findAllBookingsByUserId(userId);
 
-        Bookings booking = getBookingById(bookingId);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        LocalDateTime now = LocalDateTime.now();
 
-        BookingDetailResponse bookingDetail = BookingDetailResponse.builder()
-                .bookingId(bookingId)
-                .username(booking.getUser().getFirstLastName())
-                .phoneNumber(booking.getUser().getPhoneNumber())
-                .serviceName(booking.getService().getName())
-                .scheduleDate(booking.getScheduledDate())
-                .taskDetails(booking.getTaskDetails())
-                .totalPrice(booking.getTotalPrice())
-                .duration(booking.getDuration())
-                .cancelBy(booking.getCancelledByType().name())
-                .cancelReason(booking.getCancellationReason())
-                .status(booking.getBookingStatus().name())
-                .paymentStatus(booking.getPaymentStatus())
+        // 1. Status priority: pending → assigned → completed → cancelled
+        // 2. Date proximity: for active bookings, upcoming dates first (nearest first)
+        // 3. For past dates or completed/cancelled bookings, newest first
+        List<Bookings> sortedBookings = allBookings.stream()
+                .sorted((b1, b2) -> {
+                    int status1Priority = getStatusPriority(b1.getBookingStatus());
+                    int status2Priority = getStatusPriority(b2.getBookingStatus());
+                    if (status1Priority != status2Priority) {
+                        return status1Priority - status2Priority;
+                    }
+
+                    // If statuses are equal, sort by date logic
+                    LocalDateTime date1 = null;
+                    LocalDateTime date2 = null;
+
+                    try {
+                        date1 = LocalDateTime.parse(b1.getScheduledDate(), formatter);
+                    } catch (Exception e) {
+                        date1 = LocalDateTime.MAX;
+                    }
+
+                    try {
+                        date2 = LocalDateTime.parse(b2.getScheduledDate(), formatter);
+                    } catch (Exception e) {
+                        date2 = LocalDateTime.MAX;
+                    }
+
+                    boolean date1IsFuture = date1.isAfter(now);
+                    boolean date2IsFuture = date2.isAfter(now);
+
+                    if (status1Priority <= 1) {
+                        if (date1IsFuture && !date2IsFuture) {
+                            return -1;
+                        } else if (!date1IsFuture && date2IsFuture) {
+                            return 1;
+                        }
+
+                        if (date1IsFuture) {
+
+                            return date1.compareTo(date2);
+                        } else {
+                            return date2.compareTo(date1);
+                        }
+                    }
+                    // For completed/cancelled bookings, show most recent first
+                    else {
+                        // Sort by completion/cancellation date (using updated_at)
+                        return b2.getUpdatedAt().compareTo(b1.getUpdatedAt());
+                    }
+                })
+                .collect(Collectors.toList());
+
+        // Create pageable results
+        int start = pageNo > 0 ? (pageNo - 1) * pageSize : 0;
+        int end = Math.min(start + pageSize, sortedBookings.size());
+
+        List<Bookings> pagedBookings = sortedBookings.subList(start, end);
+
+        // Map to DTOs
+        List<BookingDetailResponse> bookingDetails = pagedBookings.stream()
+                .map(booking -> {
+                    BookingDetailResponse response = BookingDetailResponse.builder()
+                            .bookingId(booking.getId())
+                            .username(booking.getUser().getFirstLastName())
+                            .phoneNumber(booking.getUser().getPhoneNumber())
+                            .serviceName(booking.getService().getName())
+                            .scheduleDate(booking.getScheduledDate())
+                            .taskDetails(booking.getTaskDetails())
+                            .totalPrice(booking.getTotalPrice())
+                            .duration(booking.getDuration())
+                            .address(booking.getAddress())
+                            .cancelBy(booking.getCancelledByType().name())
+                            .cancelReason(booking.getCancellationReason())
+                            .status(booking.getBookingStatus().name())
+                            .paymentStatus(booking.getPaymentStatus())
+                            .build();
+
+                    if (booking.getTasker() != null) {
+                        response.setTaskerName(booking.getTasker().getFirstLastName());
+                        response.setTaskerPhone(booking.getTasker().getPhoneNumber());
+                    }
+
+                    return response;
+                })
+                .collect(Collectors.toList());
+
+        return PageResponse.builder()
+                .pageNo(pageNo)
+                .pageSize(pageSize)
+                .items(bookingDetails)
                 .build();
+    }
 
-        if (booking.getTasker() != null) {
-            bookingDetail.setTaskerName(booking.getTasker().getFirstLastName());
-            bookingDetail.setTaskerPhone(booking.getTasker().getPhoneNumber());
+    /**
+     * Gets the sorting priority for each booking status.
+     * Lower numbers are shown first in the list.
+     * 
+     * @param status The booking status
+     * @return The priority value (0 = highest priority, 4 = lowest)
+     */
+    private int getStatusPriority(BookingStatus status) {
+        switch (status) {
+            case pending:
+                return 0; // Pending bookings shown first
+            case assigned:
+                return 1; // Assigned bookings shown second
+            case completed:
+                return 2; // Completed bookings shown third
+            case cancelled:
+                return 3; // Cancelled bookings shown last
+            default:
+                return 4; // Any other status
         }
-
-        return bookingDetail;
-
     }
 
     @Override
