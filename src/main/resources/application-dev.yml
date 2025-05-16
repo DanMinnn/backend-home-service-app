@@ -63,4 +63,9 @@ vnpay:
   hash_secret: ${VNP_HASH_SECRET}
   payment_url: ${VNP_PAYMENT_URL}
   return_url: ${VNP_RETURN_URL}
+
+cloudinary:
+  cloud_name: ${CLOUDINARY_NAME}
+  api_key: ${CLOUDINARY_API_KEY}
+  api_secret: "CLOUDINARY_API_SECRET"
   

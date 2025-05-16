@@ -190,6 +190,7 @@ public class UserServiceImpl implements UserService {
                 .email(user.getEmail())
                 .firstLastName(user.getFirstLastName())
                 .phoneNumber(user.getPhoneNumber())
+                .profileImage(user.getProfileImage())
                 .isActive(user.getIsActive())
                 .lastLogin(user.getLastLogin())
                 .build();

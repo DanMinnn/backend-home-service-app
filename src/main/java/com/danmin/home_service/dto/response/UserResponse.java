@@ -18,6 +18,7 @@ public class UserResponse implements Serializable {
     private String firstLastName;
     private String phoneNumber;
     private String email;
+    private String profileImage;
     private boolean isActive;
     private LocalDateTime lastLogin;
 }
