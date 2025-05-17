@@ -1,5 +1,8 @@
 package com.danmin.home_service.service.impl;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +18,7 @@ import com.danmin.home_service.model.TaskerRole;
 import com.danmin.home_service.model.TaskerService;
 import com.danmin.home_service.model.User;
 import com.danmin.home_service.model.UserRole;
+import com.danmin.home_service.model.UserWallet;
 import com.danmin.home_service.repository.RoleRepository;
 import com.danmin.home_service.repository.ServiceRepository;
 import com.danmin.home_service.repository.TaskerRepository;
@@ -22,6 +26,7 @@ import com.danmin.home_service.repository.TaskerRoleRepository;
 import com.danmin.home_service.repository.TaskerServiceRepository;
 import com.danmin.home_service.repository.UserRepository;
 import com.danmin.home_service.repository.UserRoleRepository;
+import com.danmin.home_service.repository.UserWalletRepository;
 import com.danmin.home_service.service.RedisService;
 import com.danmin.home_service.service.RegistrationService;
 
@@ -40,9 +45,13 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final ServiceRepository serviceRepository;
     private final TaskerServiceRepository taskerServiceRepository;
 
+    // role
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
     private final TaskerRoleRepository taskerRoleRepository;
+
+    // wallet
+    private final UserWalletRepository userWalletRepository;
 
     @Override
     public <T extends AbstractUser<?>> long registerUser(RegisterDTO dto, Class<T> userType) {
@@ -67,7 +76,9 @@ public class RegistrationServiceImpl implements RegistrationService {
 
             // role user
             userRoleRepository.save(UserRole.builder().user(savedUser).role(userRole).build());
-
+            // wallet user
+            userWalletRepository.save(UserWallet.builder().user(savedUser).balance(BigDecimal.valueOf(500000))
+                    .updatedAt(LocalDateTime.now()).build());
             return savedUser.getId();
 
         } else if (userType.equals(Tasker.class)) {
