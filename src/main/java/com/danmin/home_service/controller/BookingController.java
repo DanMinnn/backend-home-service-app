@@ -8,6 +8,7 @@ import com.danmin.home_service.dto.request.ReviewDTO;
 import com.danmin.home_service.dto.response.BookingDetailResponse;
 import com.danmin.home_service.dto.response.ResponseData;
 import com.danmin.home_service.dto.response.ResponseError;
+import com.danmin.home_service.exception.PaymentException;
 import com.danmin.home_service.exception.ResourceNotFoundException;
 import com.danmin.home_service.service.BookingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -44,15 +45,16 @@ public class BookingController {
             Object result = bookingService.createBooking(req, httpRequest);
 
             if (result instanceof Map && ((Map<?, ?>) result).containsKey("paymentUrl")) {
-
                 return new ResponseData(HttpStatus.ACCEPTED.value(), "Payment URL created", result);
             } else {
-                return new ResponseData(HttpStatus.OK.value(), "Booking created successfully", result);
+                return new ResponseData(HttpStatus.OK.value(), "Booking created", result);
             }
-
+        } catch (PaymentException e) {
+            log.error("Payment failed: {}", e.getMessage());
+            return new ResponseError(HttpStatus.PAYMENT_REQUIRED.value(), e.getMessage());
         } catch (Exception e) {
-            log.error("Booked failure", e);
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Can not create booking");
+            log.error("Booking failed", e);
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Cannot create booking: " + e.getMessage());
         }
 
     }
