@@ -1,16 +1,25 @@
 package com.danmin.home_service.service;
 
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.danmin.home_service.common.BookingStatus;
 import com.danmin.home_service.common.PaymentStatus;
+import com.danmin.home_service.common.TransactionTypeUser;
+import com.danmin.home_service.dto.response.UserTransactionResponse;
+import com.danmin.home_service.dto.response.WalletResponse;
 import com.danmin.home_service.exception.PaymentException;
 import com.danmin.home_service.exception.ResourceNotFoundException;
 import com.danmin.home_service.model.Bookings;
@@ -33,71 +42,138 @@ public class UserWalletService {
     private final BookingRepository bookingRepository;
     private final PaymentRepository paymentRepository;
 
-    public String rechargeIntoWallet(Long userId, BigDecimal amount) {
-
-        User user = userRepository.findById(userId)
+    User getUserById(Long userId) {
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found !"));
+    }
 
-        UserWallet wallet = userWalletRepository.findWalletByUserId(user.getId())
+    UserWallet getWalletUser(Integer userId) {
+        return userWalletRepository.findWalletByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found !"));
+    }
 
-        BigDecimal balance = wallet.getBalance();
+    public WalletResponse getUserWallet(Long userId) {
+        User user = getUserById(userId);
 
+        UserWallet wallet = getWalletUser(user.getId());
+
+        Set<UserTransactionResponse> transactions = user.getUserTransactions().stream()
+                .sorted(Comparator.comparing(UserTransaction::getCreatedAt).reversed())
+                .map(transaction -> UserTransactionResponse.builder()
+                        .transactionId(transaction.getId())
+                        .amount(transaction.getAmount())
+                        .description(transaction.getDescription())
+                        .type(transaction.getType().name())
+                        .createdAt(transaction.getCreatedAt()).build())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        return WalletResponse.builder().walletId(wallet.getId()).userId(wallet.getUser().getId())
+                .balance(wallet.getBalance()).transactions(transactions).build();
+    }
+
+    /**
+     * Add funds to a user's wallet and record the transaction
+     * 
+     * @param userId the user ID
+     * @param amount the amount to add (must be positive)
+     * @return success message
+     */
+    @Transactional
+    public String rechargeIntoWallet(Long userId, BigDecimal amount) {
+        // Validate amount
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new PaymentException("Amount must be greater than zero");
         }
 
-        // insert db user_wallet
-        balance = balance.add(amount);
+        User user = getUserById(userId);
+        UserWallet wallet = getWalletUser(user.getId());
 
-        wallet.setBalance(balance);
+        // Format amount for better readability in transaction description
+        String formattedAmount = formatCurrency(amount);
+
+        // Update wallet balance
+        wallet.setBalance(wallet.getBalance().add(amount));
         wallet.setUpdatedAt(LocalDateTime.now());
-
         userWalletRepository.save(wallet);
 
-        // insert db user_transaction
-        String description = "+ " + amount + " into wallet";
+        // Create transaction record
+        String description = String.format("Deposit: +%s added to wallet", formattedAmount);
+        createTransaction(user, amount, description, TransactionTypeUser.deposit);
 
-        userTransactionRepository.save(UserTransaction.builder()
-                .user(user)
-                .amount(amount)
-                .description(description)
-                .build());
-
-        return "Recharged successfully !";
+        return "Recharged successfully!";
     }
 
+    /**
+     * Deduct funds from a user's wallet and record the transaction
+     * 
+     * @param userId the user ID
+     * @param amount the amount to deduct (must be positive)
+     */
+    @Transactional
     public void debitAccount(Long userId, BigDecimal amount) {
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found !"));
-
-        UserWallet wallet = userWalletRepository.findWalletByUserId(user.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found !"));
-
-        BigDecimal balance = wallet.getBalance();
-
-        if (balance.compareTo(amount) <= 0) {
-            throw new PaymentException("Balance is not enough to payment");
+        // Validate amount
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new PaymentException("Amount must be greater than zero");
         }
 
-        balance = balance.subtract(amount);
+        User user = getUserById(userId);
+        UserWallet wallet = getWalletUser(user.getId());
 
-        wallet.setBalance(balance);
+        // Check if user has sufficient balance
+        if (wallet.getBalance().compareTo(amount) < 0) {
+            throw new PaymentException("Insufficient balance for payment");
+        }
+
+        // Format amount for better readability in transaction description
+        String formattedAmount = formatCurrency(amount);
+
+        // Update wallet balance
+        wallet.setBalance(wallet.getBalance().subtract(amount));
         wallet.setUpdatedAt(LocalDateTime.now());
-
         userWalletRepository.save(wallet);
 
-        // insert db user_transaction
-        String description = "- " + amount + " into wallet";
-
-        userTransactionRepository.save(UserTransaction.builder()
-                .user(user)
-                .amount(amount)
-                .description(description)
-                .build());
+        // Create transaction record
+        String description = String.format("Payment: -%s deducted from wallet", formattedAmount);
+        createTransaction(user, amount.negate(), description, TransactionTypeUser.payment);
     }
 
+    /**
+     * Helper method to create a transaction record
+     * 
+     * @param user        the user
+     * @param amount      the transaction amount (positive for credit, negative for
+     *                    debit)
+     * @param description the transaction description
+     * @return the created transaction
+     */
+    private UserTransaction createTransaction(User user, BigDecimal amount, String description,
+            TransactionTypeUser type) {
+        UserTransaction transaction = UserTransaction.builder()
+                .user(user)
+                .amount(amount.abs()) // Store absolute value
+                .description(description)
+                .type(type)
+                .createdAt(LocalDateTime.now()) // Set creation time
+                .build();
+
+        return userTransactionRepository.save(transaction);
+    }
+
+    /**
+     * Format currency amount for display in transaction descriptions
+     * 
+     * @param amount the amount to format
+     * @return formatted currency string
+     */
+    private String formatCurrency(BigDecimal amount) {
+        DecimalFormat format = new DecimalFormat("#,### 'VND'");
+        return format.format(amount);
+    }
+
+    /**
+     * refund: update info in payment, user's wallet, user's transaction
+     * 
+     */
     public void refund(Long bookingId) {
 
         Bookings booking = bookingRepository.findById(bookingId)
@@ -145,6 +221,9 @@ public class UserWalletService {
 
                 PaymentStatus paymentStatus;
 
+                User user = getUserById(booking.getUser().getId().longValue());
+                UserWallet wallet = getWalletUser(user.getId());
+
                 // update payment
                 if (refundAmount.compareTo(booking.getTotalPrice()) == 0) {
                     paymentStatus = PaymentStatus.refunded;
@@ -156,8 +235,14 @@ public class UserWalletService {
                 payment.setRefundAmount(refundAmount);
                 payment.setRefundReason(refundReason);
                 payment.setRefundDate(new Date());
-
                 paymentRepository.save(payment);
+
+                // Update wallet balance
+                wallet.setBalance(wallet.getBalance().add(refundAmount));
+                wallet.setUpdatedAt(LocalDateTime.now());
+                userWalletRepository.save(wallet);
+
+                createTransaction(user, refundAmount, refundReason, TransactionTypeUser.refund);
 
             } else {
                 log.warn("No refund processed for booking {}", bookingId);
