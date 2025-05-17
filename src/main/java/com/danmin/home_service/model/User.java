@@ -40,15 +40,27 @@ public class User extends AbstractUser<Integer> implements BaseUser {
 
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
     @JsonIgnore
+    @Builder.Default
     private Set<UserVerifications> userVerifications = new HashSet<>();
 
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
     @JsonIgnore
+    @Builder.Default
     private Set<Address> addresses = new HashSet<>();
 
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
     @JsonIgnore
+    @Builder.Default
     private Set<UserRole> userRoles = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    @JsonIgnore
+    @Builder.Default
+    private Set<Bookings> userBookings = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    @Builder.Default
+    private Set<UserTransaction> userTransactions = new HashSet<>();
 
     @Override
     public String getPassword() {
