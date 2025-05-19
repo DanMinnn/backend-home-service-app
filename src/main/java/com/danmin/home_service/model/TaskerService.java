@@ -23,12 +23,14 @@ public class TaskerService extends AbstractEntityNoDate<Integer> {
     private Services service;
 
     @Column(name = "price_adjustment")
+    @Builder.Default
     private BigDecimal priceAdjustment = BigDecimal.ZERO;
 
     @Column(name = "experience_years")
     private Double experienceYears;
 
     @Column(name = "is_verified")
+    @Builder.Default
     private Boolean isVerified = false;
 
 }

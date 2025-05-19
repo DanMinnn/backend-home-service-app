@@ -57,14 +57,17 @@ public class Tasker extends AbstractUser<Integer> implements BaseUser {
     private AvailabilityStatus availabilityStatus;
 
     @OneToMany(mappedBy = "tasker", fetch = FetchType.EAGER)
+    @Builder.Default
     private Set<UserVerifications> userVerifications = new HashSet<>();
 
     @OneToMany(mappedBy = "tasker", fetch = FetchType.EAGER)
     @JsonIgnore
+    @Builder.Default
     private Set<TaskerRole> taskerRoles = new HashSet<>();
 
     @JsonIgnore
-    @OneToMany(mappedBy = "tasker", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "tasker", fetch = FetchType.EAGER)
+    @Builder.Default
     private Set<TaskerService> taskerServices = new HashSet<>();
 
     public void saveService(TaskerService services) {

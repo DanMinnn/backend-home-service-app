@@ -91,8 +91,6 @@ public class RegistrationServiceImpl implements RegistrationService {
                     .phoneNumber(dto.getPhoneNumber())
                     .passwordHash(encodedPassword)
                     .firstLastName(dto.getFirstLastName())
-                    .latitude(taskerDTO.getLatitude())
-                    .longitude(taskerDTO.getLongitude())
                     .availabilityStatus(taskerDTO.getStatus())
                     .isVerified(dto.isVerify())
                     .isActive(dto.isActive())
@@ -103,18 +101,23 @@ public class RegistrationServiceImpl implements RegistrationService {
             // role tasker
             taskerRoleRepository.save(TaskerRole.builder().tasker(savedTasker).role(taskerRole).build());
 
-            // when tasker register, they can choose service apply for job
-            if (taskerDTO.getServiceIds() != null && !taskerDTO.getServiceIds().isEmpty()) {
-                for (Long serviceId : taskerDTO.getServiceIds()) {
-                    Services services = serviceRepository.findById(serviceId).orElseThrow(
-                            () -> new ResourceNotFoundException("Service not found with id: " + serviceId));
-
-                    TaskerService taskerService = TaskerService.builder().tasker(tasker).service(services)
-                            .experienceYears(2.0).isVerified(true).build();
-
-                    taskerServiceRepository.save(taskerService);
-                }
-            }
+            /*
+             * // when tasker register, they can choose service apply for job
+             * if (taskerDTO.getServiceIds() != null &&
+             * !taskerDTO.getServiceIds().isEmpty()) {
+             * for (Long serviceId : taskerDTO.getServiceIds()) {
+             * Services services = serviceRepository.findById(serviceId).orElseThrow(
+             * () -> new ResourceNotFoundException("Service not found with id: " +
+             * serviceId));
+             * 
+             * TaskerService taskerService =
+             * TaskerService.builder().tasker(tasker).service(services)
+             * .experienceYears(2.0).isVerified(true).build();
+             * 
+             * taskerServiceRepository.save(taskerService);
+             * }
+             * }
+             */
 
             return savedTasker.getId();
         }
