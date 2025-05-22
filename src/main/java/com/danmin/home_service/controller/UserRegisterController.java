@@ -28,7 +28,7 @@ public class UserRegisterController extends RegistrationController<User, UserReg
             UserRepository userRepository,
             TaskerRepository taskerRepository) {
         super(redisService, emailService, registrationService,
-                User.class, "USER", "homeservice://email-verified", userRepository, taskerRepository);
+                User.class, "USER", "homeserviceuser://auth/email-verified", userRepository, taskerRepository);
     }
 
     // private final UserRegisterService userRegisterService;

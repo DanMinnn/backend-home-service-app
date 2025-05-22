@@ -28,7 +28,7 @@ public class TaskerRegisterController extends RegistrationController<Tasker, Tas
             UserRepository userRepository,
             TaskerRepository taskerRepository) {
         super(redisService, emailService, registrationService,
-                Tasker.class, "TASKER", "homeservice://email-verified", userRepository, taskerRepository);
+                Tasker.class, "TASKER", "homeservicetasker://auth/email-verified", userRepository, taskerRepository);
     }
 
     // private final TaskerRegistrationService taskerRegistrationService;

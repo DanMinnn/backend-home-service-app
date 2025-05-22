@@ -14,6 +14,6 @@ import lombok.Setter;
 public class UserRegisterDTO extends RegisterDTO implements Serializable {
 
     @NotNull(message = "type must be not null")
-    @EnumPattern(name = "status", regexp = "customer|tasker|admin")
+    @EnumPattern(name = "status", regexp = "customer|admin")
     private UserType type;
 }
