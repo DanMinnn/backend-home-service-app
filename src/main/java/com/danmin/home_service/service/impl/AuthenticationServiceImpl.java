@@ -131,7 +131,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             log.info("Error send change password link, message={}", e.getMessage());
         }
 
-        return "Sent to your email";
+        return "Password reset link sent. Check your email!";
     }
 
     @Override
@@ -141,10 +141,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         final String email = jwtService.extractEmail(key, TokenType.RESET_TOKEN);
 
         var user = userTypeService.findByEmail(email)
-                .orElseThrow(() -> new AccessDeniedException("User not found with email: " + email));
+                .orElseThrow(() -> new InvalidDataException("USER_NOT_FOUND"));
 
         if (!jwtService.isValid(key, TokenType.RESET_TOKEN, user)) {
-            throw new InvalidDataException("Not allow access with this token");
+            throw new InvalidDataException("TOKEN_EXPIRED");
         }
 
         return "Account is verified !";
@@ -152,23 +152,27 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public String changePassword(ChangePasswordDTO request) {
-        log.info("--------- reset password ---------");
+        log.info("--------- change password ---------");
 
         final String email = jwtService.extractEmail(request.getSecretKey(), TokenType.RESET_TOKEN);
 
+        if (email == null || email.isEmpty()) {
+            throw new InvalidDataException("TOKEN_EXPIRED");
+        }
+
         var user = userTypeService.findByEmail(email)
-                .orElseThrow(() -> new AccessDeniedException("User not found with email: " + email));
+                .orElseThrow(() -> new InvalidDataException("USER_NOT_FOUND"));
 
         if (!user.isEnabled()) {
-            throw new InvalidDataException("user is not active");
+            throw new InvalidDataException("USER_INACTIVE");
         }
 
         if (!jwtService.isValid(request.getSecretKey(), TokenType.RESET_TOKEN, user)) {
-            throw new InvalidDataException("Not allow access with this token");
+            throw new InvalidDataException("TOKEN_EXPIRED");
         }
 
         if (!request.getPassword().equals(request.getConfirmPassword())) {
-            throw new InvalidDataException("Password not match");
+            throw new InvalidDataException("PASSWORD_MISMATCH");
         }
 
         if (user instanceof User) {
@@ -181,7 +185,23 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             taskerRepository.save(tasker);
         }
 
-        return "Changed";
+        return "PASSWORD_CHANGED_SUCCESS";
+        // try {
+
+        // } catch (Exception e) {
+        // // Log the exception for server-side tracking
+        // log.error("Change password failed: {}", e.getMessage());
+
+        // // Re-throw with appropriate message
+        // if (e instanceof InvalidDataException) {
+        // throw e; // Already has appropriate message
+        // } else if (e.getMessage() != null && e.getMessage().contains("JWT expired"))
+        // {
+        // throw new InvalidDataException("TOKEN_EXPIRED");
+        // } else {
+        // throw new InvalidDataException("CHANGE_PASSWORD_FAILED");
+        // }
+        // }
     }
 
 }

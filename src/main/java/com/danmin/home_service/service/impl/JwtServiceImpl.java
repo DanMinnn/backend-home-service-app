@@ -85,6 +85,8 @@ public class JwtServiceImpl implements JwtService {
         try {
             return Jwts.parser().setSigningKey(getKey(tokenType)).build().parseClaimsJws(token).getBody();
         } catch (ExpiredJwtException e) {
+            throw e;
+        } catch (Exception e) {
             throw new InvalidDataException("Invalid token: " + e.getMessage(), e);
         }
     }
@@ -120,7 +122,7 @@ public class JwtServiceImpl implements JwtService {
                 .claims(claims)
                 .subject(user.getUsername())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 5)) // 70 seconds
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 5)) // 5 mins
                 .signWith(getKey(TokenType.RESET_TOKEN), SignatureAlgorithm.HS256)
                 .compact();
     }

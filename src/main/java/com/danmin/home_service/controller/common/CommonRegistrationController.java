@@ -37,8 +37,17 @@ public class CommonRegistrationController {
                 return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Verification failed or expired");
             }
 
-            String redirectUrl = "homeservice://email-verified?userType=" + userType + "&success=true&secretCode="
-                    + secretCode;
+            String redirectUrl = "";
+
+            if (userType.equals("TASKER")) {
+                redirectUrl = "homeservicetasker://authorized/email-verified?userType=" + userType
+                        + "&success=true&secretCode="
+                        + secretCode;
+            } else {
+                redirectUrl = "home_service_user://auth/email-verified?userType=" + userType
+                        + "&success=true&secretCode="
+                        + secretCode;
+            }
 
             String fallbackUrl = "https://tayjava.vn";
 
