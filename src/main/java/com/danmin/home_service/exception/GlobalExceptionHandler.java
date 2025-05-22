@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
+import io.jsonwebtoken.JwtException;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -136,15 +137,15 @@ public class GlobalExceptionHandler {
      * @return
      */
     @ExceptionHandler(InvalidDataException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
+    @ResponseStatus(HttpStatus.OK)
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "409", description = "Conflict", content = {
-                    @Content(mediaType = APPLICATION_JSON_VALUE, examples = @ExampleObject(name = "409 Response", summary = "Handle exception when input data is conflicted", value = """
+            @ApiResponse(responseCode = "400", description = "Invalid data", content = {
+                    @Content(mediaType = APPLICATION_JSON_VALUE, examples = @ExampleObject(name = "400 Response", summary = "Handle exception when input data is invalid", value = """
                             {
                               "timestamp": "2023-10-19T06:07:35.321+00:00",
-                              "status": 409,
+                              "status": 400,
                               "path": "/api/v1/...",
-                              "error": "Conflict",
+                              "error": "Invalid data",
                               "message": "{data} exists, Please try again!"
                             }
                             """)) })
@@ -153,8 +154,8 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setTimestamp(new Date());
         errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
-        errorResponse.setStatus(HttpStatus.CONFLICT.value());
-        errorResponse.setError(HttpStatus.CONFLICT.getReasonPhrase());
+        errorResponse.setStatus(HttpStatus.BAD_REQUEST.value());
+        errorResponse.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
         errorResponse.setMessage(e.getMessage());
 
         return errorResponse;
@@ -191,4 +192,43 @@ public class GlobalExceptionHandler {
 
         return errorResponse;
     }
+
+    /**
+     * Handle exception when token expired
+     *
+     * @param e
+     * @param request
+     * @return error
+     */
+    @ExceptionHandler(JwtException.class)
+    @ResponseStatus(HttpStatus.OK)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = {
+                    @Content(mediaType = APPLICATION_JSON_VALUE, examples = @ExampleObject(name = "401 Response", summary = "Handle exception when token expired", value = """
+                            {
+                              "timestamp": "2023-10-19T06:35:52.333+00:00",
+                              "status": 401,
+                              "path": "/api/v1/...",
+                              "error": "Token Expired",
+                              "message": "Connection timeout, please try again"
+                            }
+                            """)) })
+    })
+    public ErrorResponse handleJwtException(JwtException e, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setTimestamp(new Date());
+        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+        errorResponse.setStatus(HttpStatus.UNAUTHORIZED.value());
+        errorResponse.setError(HttpStatus.UNAUTHORIZED.getReasonPhrase());
+        errorResponse.setMessage(e.getMessage());
+
+        if (e instanceof io.jsonwebtoken.ExpiredJwtException) {
+            errorResponse.setMessage("TOKEN_EXPIRED");
+        } else {
+            errorResponse.setMessage("INVALID_TOKEN");
+        }
+
+        return errorResponse;
+    }
+
 }
