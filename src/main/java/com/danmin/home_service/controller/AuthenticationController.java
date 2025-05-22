@@ -4,13 +4,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.danmin.home_service.common.TokenType;
 import com.danmin.home_service.dto.request.ChangePasswordDTO;
 import com.danmin.home_service.dto.request.SignInRequest;
 import com.danmin.home_service.dto.response.ResponseData;
 import com.danmin.home_service.dto.response.ResponseError;
 import com.danmin.home_service.dto.response.TokenResponse;
 import com.danmin.home_service.exception.InvalidDataException;
+import com.danmin.home_service.model.Tasker;
+import com.danmin.home_service.model.User;
 import com.danmin.home_service.service.AuthenticationService;
+import com.danmin.home_service.service.JwtService;
+import com.danmin.home_service.service.UserTypeService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,6 +40,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class AuthenticationController {
 
     private final AuthenticationService authenticationService;
+    private final UserTypeService userTypeService;
+    private final JwtService jwtService;
 
     @Operation(summary = "Access token", description = "Get access token and refresh token by email and password")
     @PostMapping("/access-token")
@@ -61,21 +68,43 @@ public class AuthenticationController {
     }
 
     @Operation(summary = "Confirm reset password", description = "Verify token when click confirm reset password")
-    @GetMapping("/tasker/reset-password")
-    public ResponseData<?> taskerResetPassword(@RequestParam String data, HttpServletResponse response) {
-        log.info("Confirm reset password for tasker");
+    @GetMapping("/reset-password")
+    public ResponseData<?> resetPassword(@RequestParam String data, HttpServletResponse response) {
+        log.info("Confirm reset password for user");
         try {
-            String deepLinkUrl = "homeservicetasker://authorized/reset-password";
-            // Append parameters correctly
-            String redirectUrl = deepLinkUrl + "?token=" + data;
-            String fallbackUrl = "https://tayjava.vn";
-            String result = authenticationService.resetPassword(data);
-            if (result != null && !result.isEmpty()) {
-                redirect(response, redirectUrl, fallbackUrl);
-                return new ResponseData(HttpStatus.OK.value(), "Redirect successfully");
-            } else {
-                return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Redirect failed");
+
+            final String email = jwtService.extractEmail(data, TokenType.RESET_TOKEN);
+
+            var user = userTypeService.findByEmail(email)
+                    .orElseThrow(() -> new InvalidDataException("USER_NOT_FOUND"));
+
+            if (user instanceof User) {
+                String deepLinkUrl = "homeserviceuser://authorized/reset-password";
+                // Append parameters correctly
+                String redirectUrl = deepLinkUrl + "?token=" + data;
+                String fallbackUrl = "https://tayjava.vn";
+                String result = authenticationService.resetPassword(data);
+                if (result != null && !result.isEmpty()) {
+                    redirect(response, redirectUrl, fallbackUrl);
+                    return new ResponseData(HttpStatus.OK.value(), "Redirect successfully");
+                } else {
+                    return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Redirect failed");
+                }
+            } else if (user instanceof Tasker) {
+                String deepLinkUrl = "homeservicetasker://authorized/reset-password";
+                // Append parameters correctly
+                String redirectUrl = deepLinkUrl + "?token=" + data;
+                String fallbackUrl = "https://tayjava.vn";
+                String result = authenticationService.resetPassword(data);
+                if (result != null && !result.isEmpty()) {
+                    redirect(response, redirectUrl, fallbackUrl);
+                    return new ResponseData(HttpStatus.OK.value(), "Redirect successfully");
+                } else {
+                    return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Redirect failed");
+                }
             }
+            return new ResponseData(HttpStatus.OK.value(), "Redirect successfully");
+
         } catch (InvalidDataException e) {
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
         } catch (Exception e) {
@@ -89,7 +118,8 @@ public class AuthenticationController {
     public ResponseData<?> changePassword(@Valid @RequestBody ChangePasswordDTO req) {
         log.info("Change password request received");
         try {
-
+            String result = authenticationService.changePassword(req);
+            return new ResponseData<>(HttpStatus.OK.value(), result);
         } catch (InvalidDataException e) {
             log.warn("Change password failed: {}", e.getMessage());
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
@@ -97,8 +127,7 @@ public class AuthenticationController {
             log.error("Unexpected error during password change: {}", e.getMessage());
             return new ResponseError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An unexpected error occurred");
         }
-        String result = authenticationService.changePassword(req);
-        return new ResponseData<>(HttpStatus.OK.value(), result);
+
     }
 
     void redirect(HttpServletResponse response, String redirectUrl, String fallbackUrl) throws IOException {

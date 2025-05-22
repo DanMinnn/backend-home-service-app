@@ -44,7 +44,7 @@ public class CommonRegistrationController {
                         + "&success=true&secretCode="
                         + secretCode;
             } else {
-                redirectUrl = "home_service_user://auth/email-verified?userType=" + userType
+                redirectUrl = "homeserviceuser://authorized/email-verified?userType=" + userType
                         + "&success=true&secretCode="
                         + secretCode;
             }
