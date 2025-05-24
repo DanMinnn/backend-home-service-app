@@ -68,9 +68,9 @@ public class Tasker extends AbstractUser<Integer> implements BaseUser {
     @JsonIgnore
     @OneToMany(mappedBy = "tasker", fetch = FetchType.EAGER)
     @Builder.Default
-    private Set<TaskerService> taskerServices = new HashSet<>();
+    private Set<TaskerServiceModel> taskerServices = new HashSet<>();
 
-    public void saveService(TaskerService services) {
+    public void saveService(TaskerServiceModel services) {
         if (services != null) {
             if (taskerServices == null) {
                 taskerServices = new HashSet<>();

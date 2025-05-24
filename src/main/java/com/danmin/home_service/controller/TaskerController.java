@@ -3,9 +3,12 @@ package com.danmin.home_service.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.danmin.home_service.dto.request.TaskerServiceDTO;
 import com.danmin.home_service.dto.response.ResponseData;
 import com.danmin.home_service.dto.response.ResponseError;
 import com.danmin.home_service.service.ImageService;
@@ -35,5 +38,12 @@ public class TaskerController {
             log.error("errorMessage={}", e.getMessage(), e.getCause());
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
         }
+    }
+
+    @Operation(summary = "Add tasker with service")
+    @PostMapping("/add-tasker-service/")
+    public ResponseData<?> addTaskerWithService(@RequestBody TaskerServiceDTO req) {
+        taskerService.addTaskerService(req);
+        return new ResponseData<>(HttpStatus.OK.value(), "Add successfully");
     }
 }

@@ -1,6 +1,7 @@
 package com.danmin.home_service.service;
 
 import com.danmin.home_service.dto.request.AddressDTO;
+import com.danmin.home_service.dto.request.TaskerServiceDTO;
 import com.danmin.home_service.dto.request.UserDTO;
 import com.danmin.home_service.dto.response.TaskerResponse;
 
@@ -12,4 +13,6 @@ public interface TaskerService {
     void saveAddress(long userId, AddressDTO address);
 
     TaskerResponse getProfileTasker(String email);
+
+    void addTaskerService(TaskerServiceDTO taskerServiceDTO);
 }

@@ -9,21 +9,16 @@ import org.springframework.stereotype.Service;
 import com.danmin.home_service.dto.request.RegisterDTO;
 import com.danmin.home_service.dto.request.TaskerRegisterDTO;
 import com.danmin.home_service.dto.request.UserRegisterDTO;
-import com.danmin.home_service.exception.ResourceNotFoundException;
 import com.danmin.home_service.model.AbstractUser;
 import com.danmin.home_service.model.Role;
-import com.danmin.home_service.model.Services;
 import com.danmin.home_service.model.Tasker;
 import com.danmin.home_service.model.TaskerRole;
-import com.danmin.home_service.model.TaskerService;
 import com.danmin.home_service.model.User;
 import com.danmin.home_service.model.UserRole;
 import com.danmin.home_service.model.UserWallet;
 import com.danmin.home_service.repository.RoleRepository;
-import com.danmin.home_service.repository.ServiceRepository;
 import com.danmin.home_service.repository.TaskerRepository;
 import com.danmin.home_service.repository.TaskerRoleRepository;
-import com.danmin.home_service.repository.TaskerServiceRepository;
 import com.danmin.home_service.repository.UserRepository;
 import com.danmin.home_service.repository.UserRoleRepository;
 import com.danmin.home_service.repository.UserWalletRepository;
@@ -42,8 +37,6 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final TaskerRepository taskerRepository;
     private final PasswordEncoder passwordEncoder;
     private final RedisService redisService;
-    private final ServiceRepository serviceRepository;
-    private final TaskerServiceRepository taskerServiceRepository;
 
     // role
     private final RoleRepository roleRepository;
@@ -100,24 +93,6 @@ public class RegistrationServiceImpl implements RegistrationService {
 
             // role tasker
             taskerRoleRepository.save(TaskerRole.builder().tasker(savedTasker).role(taskerRole).build());
-
-            /*
-             * // when tasker register, they can choose service apply for job
-             * if (taskerDTO.getServiceIds() != null &&
-             * !taskerDTO.getServiceIds().isEmpty()) {
-             * for (Long serviceId : taskerDTO.getServiceIds()) {
-             * Services services = serviceRepository.findById(serviceId).orElseThrow(
-             * () -> new ResourceNotFoundException("Service not found with id: " +
-             * serviceId));
-             * 
-             * TaskerService taskerService =
-             * TaskerService.builder().tasker(tasker).service(services)
-             * .experienceYears(2.0).isVerified(true).build();
-             * 
-             * taskerServiceRepository.save(taskerService);
-             * }
-             * }
-             */
 
             return savedTasker.getId();
         }
