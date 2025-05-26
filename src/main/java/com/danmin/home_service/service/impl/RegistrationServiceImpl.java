@@ -13,12 +13,14 @@ import com.danmin.home_service.model.AbstractUser;
 import com.danmin.home_service.model.Role;
 import com.danmin.home_service.model.Tasker;
 import com.danmin.home_service.model.TaskerRole;
+import com.danmin.home_service.model.TaskerWallet;
 import com.danmin.home_service.model.User;
 import com.danmin.home_service.model.UserRole;
 import com.danmin.home_service.model.UserWallet;
 import com.danmin.home_service.repository.RoleRepository;
 import com.danmin.home_service.repository.TaskerRepository;
 import com.danmin.home_service.repository.TaskerRoleRepository;
+import com.danmin.home_service.repository.TaskerWalletRepository;
 import com.danmin.home_service.repository.UserRepository;
 import com.danmin.home_service.repository.UserRoleRepository;
 import com.danmin.home_service.repository.UserWalletRepository;
@@ -45,6 +47,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     // wallet
     private final UserWalletRepository userWalletRepository;
+    private final TaskerWalletRepository taskerWalletRepository;
 
     @Override
     public <T extends AbstractUser<?>> long registerUser(RegisterDTO dto, Class<T> userType) {
@@ -93,7 +96,8 @@ public class RegistrationServiceImpl implements RegistrationService {
 
             // role tasker
             taskerRoleRepository.save(TaskerRole.builder().tasker(savedTasker).role(taskerRole).build());
-
+            taskerWalletRepository.save(TaskerWallet.builder().tasker(savedTasker).balance(BigDecimal.valueOf(500000))
+                    .updatedAt(LocalDateTime.now()).build());
             return savedTasker.getId();
         }
         throw new IllegalArgumentException("Unsupported user type: " + userType.getName());

@@ -17,6 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
@@ -60,7 +61,7 @@ public class BookingController {
     }
 
     @Operation(summary = "Assign Tasker (for tasker)")
-    @PutMapping("/{bookingId}/assign-tasker")
+    @PostMapping("/{bookingId}/assign-tasker")
     public ResponseData<?> assignTasker(@PathVariable(value = "bookingId") Long bookingId,
             @RequestParam(value = "taskerId") Long taskerId) {
 
@@ -174,6 +175,46 @@ public class BookingController {
         } catch (ResourceNotFoundException e) {
             log.error("errorMessage={}", e.getMessage(), e.getCause());
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+        }
+
+    }
+
+    @Operation(summary = "Get all task with service correspond for tasker")
+    @GetMapping("/all-task-for-tasker")
+    public ResponseData<?> getAllTaskForTasker(@RequestParam(defaultValue = "0", required = false) int pageNo,
+            @RequestParam(defaultValue = "10", required = false) int pageSize,
+            @RequestParam(name = "serviceIds") List<Long> serviceIds) {
+
+        try {
+            return new ResponseData(HttpStatus.OK.value(), "All tasks for tasker",
+                    bookingService.getTaskForTasker(pageNo, pageSize, serviceIds));
+        } catch (ResourceNotFoundException e) {
+            log.error("errorMessage={}", e.getMessage(), e.getCause());
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid status value: {}", e.getMessage());
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Invalid status value: " + e.getMessage());
+        }
+
+    }
+
+    @Operation(summary = "Gets all assigned bookings for the specific tasker based on specificed date")
+    @GetMapping("/{taskerId}/get-task-assigned-by-date")
+    public ResponseData<?> getTaskAssignedByDate(
+            @RequestParam(defaultValue = "0", required = false) int pageNo,
+            @RequestParam(defaultValue = "10", required = false) int pageSize,
+            @PathVariable(name = "taskerId") Long taskerId,
+            @RequestParam(name = "selectedDate") String selectedDate) {
+
+        try {
+            return new ResponseData(HttpStatus.OK.value(), "All tasks was assigned for tasker",
+                    bookingService.getTaskAssignByTaskerFollowDateTime(pageNo, pageSize, taskerId, selectedDate));
+        } catch (ResourceNotFoundException e) {
+            log.error("errorMessage={}", e.getMessage(), e.getCause());
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid status value: {}", e.getMessage());
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Invalid status value: " + e.getMessage());
         }
 
     }

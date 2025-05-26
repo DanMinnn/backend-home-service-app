@@ -48,4 +48,20 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
         @Query("SELECT b FROM Bookings b WHERE b.user.id = :userId AND b.bookingStatus = :status")
         List<Bookings> findBookingsByUserIdAndStatus(@Param("userId") Integer userId,
                         @Param("status") BookingStatus status);
+
+        /* Get booking for tasker with service corresponds */
+        @Query("""
+                        SELECT b FROM Bookings b WHERE b.bookingStatus = 'pending' AND b.service.id IN :serviceIds
+                        """)
+        List<Bookings> getTaskForTasker(
+                        @Param("serviceIds") List<Long> serviceIds);
+
+        /* Get booking was assigned by Tasker */
+        @Query("SELECT b FROM Bookings b WHERE b.tasker.id = :taskerId AND b.bookingStatus = 'assigned'")
+        List<Bookings> getTaskAssignByTasker(@Param("taskerId") Long taskerId);
+
+        /* Get booking was assigned by Tasker follow date time */
+        @Query("SELECT b FROM Bookings b WHERE b.tasker.id = :taskerId AND b.bookingStatus = 'assigned' AND b.scheduledDate >= :dateTime")
+        List<Bookings> getTaskAssignByTaskerFollowDateTime(@Param("taskerId") Long taskerId,
+                        @Param("dateTime") String dateTime);
 }

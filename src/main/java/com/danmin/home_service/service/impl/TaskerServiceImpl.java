@@ -77,6 +77,7 @@ public class TaskerServiceImpl implements TaskerService {
                 .services(services).build();
     }
 
+    /*  */
     @Override
     public void addTaskerService(TaskerServiceDTO taskerServiceDTO) {
         Tasker tasker = getTaskerById(taskerServiceDTO.getTaskerId());
@@ -99,5 +100,4 @@ public class TaskerServiceImpl implements TaskerService {
         }
 
     }
-
 }

@@ -16,11 +16,13 @@ import lombok.Setter;
 public class BookingDetailResponse implements Serializable {
 
     private Long bookingId;
+    private Long serviceId;
     private String scheduleDate;
     private String status;
     private Map<String, Object> taskDetails;
     private BigDecimal totalPrice;
     private String duration;
+    private String notes;
     private String username;
     private String cancelBy;
     private String cancelReason;
@@ -30,5 +32,7 @@ public class BookingDetailResponse implements Serializable {
     private String taskerPhone;
     private String paymentStatus;
     private String address;
+    private BigDecimal latitude;
+    private BigDecimal longitude;
 
 }
