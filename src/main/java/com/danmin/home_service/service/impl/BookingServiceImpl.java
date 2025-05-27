@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -457,87 +458,60 @@ public class BookingServiceImpl implements BookingService {
             String selectedDate) {
 
         try {
-            // Parse the selectedDate for filtering
-            LocalDateTime filterStartDateTime = null;
-            LocalDateTime filterEndDateTime = null;
+            LocalDate filterDate = null;
 
+            // Parse selectedDate
             if (selectedDate != null && !selectedDate.isEmpty()) {
                 try {
-                    // Convert "dd/MM" format to LocalDateTime for start and end of day
-                    int currentYear = LocalDate.now().getYear();
-                    LocalDate filterDate = LocalDate.parse(selectedDate.trim() + "/" + currentYear,
-                            DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-
-                    filterStartDateTime = filterDate.atStartOfDay();
-                    filterEndDateTime = filterDate.plusDays(1).atStartOfDay();
+                    filterDate = LocalDate.parse(
+                            selectedDate.trim(), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
                 } catch (DateTimeParseException e) {
-                    log.warn("Invalid date format: {}. Using ISO format (dd/MM)", selectedDate);
-                    throw new IllegalArgumentException("Invalid date format. Please use dd/MM format.");
+                    log.warn("Invalid date format: {}. Expected dd/MM/yyyy format.", selectedDate);
+                    throw new IllegalArgumentException("Invalid date format. Please use dd/MM/yyyy format.");
                 }
             }
 
-            // Get all assigned bookings for this tasker
-            List<Bookings> allAssignedBookings = bookingRepository.getTaskAssignByTasker(taskerId);
-
-            // Filter bookings by date if a date was provided
-            final LocalDateTime finalFilterStartDateTime = filterStartDateTime;
-            final LocalDateTime finalFilterEndDateTime = filterEndDateTime;
-
-            List<Bookings> filteredBookings = allAssignedBookings;
-            if (finalFilterStartDateTime != null && finalFilterEndDateTime != null) {
-                filteredBookings = allAssignedBookings.stream()
-                        .filter(booking -> {
-                            LocalDateTime bookingDateTime = booking.getScheduledStart();
-                            // Check if booking is on the selected date
-                            return bookingDateTime != null &&
-                                    bookingDateTime.isAfter(finalFilterStartDateTime) &&
-                                    bookingDateTime.isBefore(finalFilterEndDateTime);
-                        })
+            // Get filtered bookings directly from database
+            List<Bookings> filteredBookings;
+            if (filterDate != null) {
+                filteredBookings = bookingRepository.getTaskAssignByTaskerFollowDate(taskerId, filterDate);
+            } else {
+                filteredBookings = bookingRepository.getTaskAssignByTasker(taskerId)
+                        .stream()
+                        .sorted(Comparator.comparing(
+                                booking -> booking.getScheduledStart() != null ? booking.getScheduledStart()
+                                        : LocalDateTime.MAX))
                         .collect(Collectors.toList());
             }
 
-            // Sort by time on the selected date
-            List<Bookings> sortedBookings = filteredBookings.stream()
-                    .sorted((b1, b2) -> {
-                        LocalDateTime date1 = b1.getScheduledStart();
-                        LocalDateTime date2 = b2.getScheduledStart();
+            // Pagination
+            int totalItems = filteredBookings.size();
+            int start = Math.max(0, (pageNo - 1) * pageSize);
+            int end = Math.min(start + pageSize, totalItems);
 
-                        if (date1 == null)
-                            return 1;
-                        if (date2 == null)
-                            return -1;
-
-                        return date1.compareTo(date2);
-                    })
-                    .collect(Collectors.toList());
-
-            // Create pageable results
-            int start = pageNo > 0 ? (pageNo - 1) * pageSize : 0;
-            int end = Math.min(start + pageSize, sortedBookings.size());
-
-            if (start >= sortedBookings.size()) {
+            if (start >= totalItems) {
                 return PageResponse.builder()
                         .pageNo(pageNo)
                         .pageSize(pageSize)
+                        .totalPage((int) Math.ceil((double) totalItems / pageSize))
                         .items(List.of())
                         .build();
             }
 
-            List<Bookings> pagedBookings = sortedBookings.subList(start, end);
-
-            // Map to DTOs
+            List<Bookings> pagedBookings = filteredBookings.subList(start, end);
             List<BookingDetailResponse> bookingDetails = bookingDetailResponses(pagedBookings);
 
             return PageResponse.builder()
                     .pageNo(pageNo)
                     .pageSize(pageSize)
+                    .totalPage((int) Math.ceil((double) totalItems / pageSize))
                     .items(bookingDetails)
                     .build();
 
         } catch (ResourceNotFoundException | IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Error getting tasks for tasker: {}", e.getMessage());
+            log.error("Error getting tasks for tasker: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to retrieve tasks: " + e.getMessage());
         }
     }

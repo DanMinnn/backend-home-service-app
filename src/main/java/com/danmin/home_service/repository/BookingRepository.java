@@ -1,5 +1,6 @@
 package com.danmin.home_service.repository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -63,8 +64,11 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
          * Get booking was assigned by Tasker follow date time - updated to use
          * scheduled_start
          */
-        @Query("SELECT b FROM Bookings b WHERE b.tasker.id = :taskerId AND b.bookingStatus = 'assigned' " +
-                        "AND DATE_FORMAT(b.scheduledStart, '%d/%m') = :dateTime")
-        List<Bookings> getTaskAssignByTaskerFollowDateTime(@Param("taskerId") Long taskerId,
-                        @Param("dateTime") String dateTime);
+        @Query("SELECT b FROM Bookings b WHERE b.tasker.id = :taskerId " +
+                        "AND b.bookingStatus = 'assigned' " +
+                        "AND DATE(b.scheduledStart) = :selectedDate " +
+                        "ORDER BY b.scheduledStart ASC")
+        List<Bookings> getTaskAssignByTaskerFollowDate(
+                        @Param("taskerId") Long taskerId,
+                        @Param("selectedDate") LocalDate selectedDate);
 }
