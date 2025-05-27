@@ -3,13 +3,11 @@ package com.danmin.home_service.service.impl;
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -94,8 +92,9 @@ public class BookingServiceImpl implements BookingService {
                 .service(services)
                 .packages(servicesPackage)
                 .address(req.getAddress())
-                .duration(req.getDuration())
-                .scheduledDate(req.getScheduledDate())
+                .scheduledStart(req.getScheduledStart())
+                .scheduledEnd(req.getScheduledEnd())
+                .durationMinutes(req.getDurationMinutes())
                 .taskDetails(req.getTaskDetails())
                 .totalPrice(req.getTotalPrice())
                 .notes(req.getNotes())
@@ -163,13 +162,66 @@ public class BookingServiceImpl implements BookingService {
     @Transactional(rollbackOn = Exception.class)
     @Override
     public void assignTasker(long bookingId, long taskerId) {
-
         Bookings booking = getBookingById(bookingId);
-
         Tasker tasker = taskerRepository.findById(taskerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tasker not found with id: " + taskerId));
+                .orElseThrow(() -> new ResourceNotFoundException("Tasker not found with id: "
+                        + taskerId));
 
-        // note
+        // Get all currently assigned bookings for this tasker
+        List<Bookings> existingBookings = bookingRepository.getTaskAssignByTasker(taskerId);
+
+        // Get start and end time from the new booking
+        LocalDateTime newBookingStart = booking.getScheduledStart();
+        LocalDateTime newBookingEnd = booking.getScheduledEnd();
+
+        if (newBookingStart == null || newBookingEnd == null) {
+            log.error("Booking has invalid scheduled times");
+            throw new BusinessException("Invalid booking times");
+        }
+
+        // Check for scheduling conflicts with existing bookings
+        for (Bookings existingBooking : existingBookings) {
+            try {
+                LocalDateTime existingStart = existingBooking.getScheduledStart();
+                LocalDateTime existingEnd = existingBooking.getScheduledEnd();
+
+                if (existingStart == null || existingEnd == null) {
+                    log.warn("Existing booking {} has invalid scheduled times", existingBooking.getId());
+                    continue;
+                }
+
+                // Check if there's at least 2 hours between jobs
+                if ((existingEnd.plusHours(2).isAfter(newBookingStart) &&
+                        existingEnd.isBefore(newBookingEnd)) ||
+                        (existingStart.isAfter(newBookingStart) &&
+                                existingStart.isBefore(newBookingEnd.plusHours(2)))
+                        ||
+                        (newBookingStart.isAfter(existingStart) &&
+                                newBookingStart.isBefore(existingEnd))
+                        ||
+                        (newBookingEnd.isAfter(existingStart) &&
+                                newBookingEnd.isBefore(existingEnd))) {
+                    throw new BusinessException(
+                            "Cannot assign this job. The tasker needs at least 2 hours between jobs.");
+                }
+            } catch (BusinessException be) {
+                throw be;
+            } catch (Exception e) {
+                log.warn("Failed to check scheduling for existing booking {}: {}",
+                        existingBooking.getId(), e.getMessage());
+                // Skip this booking if there's an issue
+            }
+        }
+
+        // Check if tasker provides this service
+        Boolean hasService = tasker.getTaskerServices().stream()
+                .anyMatch(ts -> ts.getService().getId().equals(booking.getService().getId()));
+
+        if (!hasService) {
+            throw new ResourceNotFoundException("Tasker does not provide this service");
+        }
+
+        // Verify tasker is available and has sufficient balance
         if (tasker.getAvailabilityStatus().name().equals("available")
                 && taskerWalletService.checkBalanceAccount(taskerId, bookingId)) {
             booking.setTasker(tasker);
@@ -177,7 +229,7 @@ public class BookingServiceImpl implements BookingService {
             tasker.setAvailabilityStatus(AvailabilityStatus.busy);
             taskerRepository.save(tasker);
         } else {
-            throw new PaymentException("Balance is not enough");
+            throw new PaymentException("Balance is not enough or tasker is not available");
         }
 
         bookingRepository.save(booking);
@@ -188,7 +240,6 @@ public class BookingServiceImpl implements BookingService {
         // Fetch all bookings for the user
         List<Bookings> allBookings = bookingRepository.findAllBookingsByUserId(userId);
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         LocalDateTime now = LocalDateTime.now();
 
         // 1. Status priority: pending → assigned → completed → cancelled
@@ -203,20 +254,13 @@ public class BookingServiceImpl implements BookingService {
                     }
 
                     // If statuses are equal, sort by date logic
-                    LocalDateTime date1 = null;
-                    LocalDateTime date2 = null;
+                    LocalDateTime date1 = b1.getScheduledStart();
+                    LocalDateTime date2 = b2.getScheduledStart();
 
-                    try {
-                        date1 = LocalDateTime.parse(b1.getScheduledDate(), formatter);
-                    } catch (Exception e) {
+                    if (date1 == null)
                         date1 = LocalDateTime.MAX;
-                    }
-
-                    try {
-                        date2 = LocalDateTime.parse(b2.getScheduledDate(), formatter);
-                    } catch (Exception e) {
+                    if (date2 == null)
                         date2 = LocalDateTime.MAX;
-                    }
 
                     boolean date1IsFuture = date1.isAfter(now);
                     boolean date2IsFuture = date2.isAfter(now);
@@ -229,7 +273,6 @@ public class BookingServiceImpl implements BookingService {
                         }
 
                         if (date1IsFuture) {
-
                             return date1.compareTo(date2);
                         } else {
                             return date2.compareTo(date1);
@@ -290,29 +333,21 @@ public class BookingServiceImpl implements BookingService {
             // Fetch bookings for the user with the specified status
             List<Bookings> filteredBookings = bookingRepository.findBookingsByUserIdAndStatus(userId, bookingStatus);
 
-            // Apply the same sorting logic for dates as in getBookingDetail
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            // Apply sorting logic for dates
             LocalDateTime now = LocalDateTime.now();
 
             // Sort by date proximity - for future dates, nearest first; for past dates,
             // most recent first
             List<Bookings> sortedBookings = filteredBookings.stream()
                     .sorted((b1, b2) -> {
-                        // Parse scheduled dates
-                        LocalDateTime date1 = null;
-                        LocalDateTime date2 = null;
+                        // Get scheduled dates
+                        LocalDateTime date1 = b1.getScheduledStart();
+                        LocalDateTime date2 = b2.getScheduledStart();
 
-                        try {
-                            date1 = LocalDateTime.parse(b1.getScheduledDate(), formatter);
-                        } catch (Exception e) {
+                        if (date1 == null)
                             date1 = LocalDateTime.MAX;
-                        }
-
-                        try {
-                            date2 = LocalDateTime.parse(b2.getScheduledDate(), formatter);
-                        } catch (Exception e) {
+                        if (date2 == null)
                             date2 = LocalDateTime.MAX;
-                        }
 
                         boolean date1IsFuture = date1.isAfter(now);
                         boolean date2IsFuture = date2.isAfter(now);
@@ -365,34 +400,24 @@ public class BookingServiceImpl implements BookingService {
             // Current date and time for comparison
             LocalDateTime now = LocalDateTime.now();
 
-            // Parse and filter dates in the application layer
+            // Filter for future bookings and sort by proximity
             List<Bookings> futureBookings = filteredBookings.stream()
                     .filter(booking -> {
-                        try {
-                            // Parse complex date format: "Monday, 16/04/2025 - 02:00 PM"
-                            String dateStr = booking.getScheduledDate();
-
-                            // Create LocalDateTime object
-                            LocalDateTime scheduledDateTime = parseScheduledDate(dateStr);
-
-                            // Compare with current time
-                            return scheduledDateTime.isAfter(now) || scheduledDateTime.isEqual(now);
-                        } catch (Exception e) {
-                            log.warn("Failed to parse date '{}' for booking {}: {}",
-                                    booking.getScheduledDate(), booking.getId(), e.getMessage());
-                            // If date parsing fails, include the booking anyway to avoid hiding data
-                            return true;
-                        }
+                        LocalDateTime scheduledStart = booking.getScheduledStart();
+                        // Include bookings scheduled now or in the future
+                        return scheduledStart != null && (scheduledStart.isAfter(now) || scheduledStart.isEqual(now));
                     })
                     .sorted((b1, b2) -> {
                         // Sort by proximity - nearest scheduled date first
-                        try {
-                            LocalDateTime date1 = parseScheduledDate(b1.getScheduledDate());
-                            LocalDateTime date2 = parseScheduledDate(b2.getScheduledDate());
-                            return date1.compareTo(date2);
-                        } catch (Exception e) {
-                            return 0; // Keep original order if parsing fails
-                        }
+                        LocalDateTime date1 = b1.getScheduledStart();
+                        LocalDateTime date2 = b2.getScheduledStart();
+
+                        if (date1 == null)
+                            return 1;
+                        if (date2 == null)
+                            return -1;
+
+                        return date1.compareTo(date2);
                     })
                     .collect(Collectors.toList());
 
@@ -425,45 +450,48 @@ public class BookingServiceImpl implements BookingService {
     }
 
     /*
-     * Gets all assigned bookings for the specific tasker based on specificed date
+     * Gets all assigned bookings for the specific tasker based on specified date
      */
     @Override
     public PageResponse<?> getTaskAssignByTaskerFollowDateTime(int pageNo, int pageSize, Long taskerId,
             String selectedDate) {
-        try {
-            // Get all assigned bookings for this tasker
-            List<Bookings> allAssignedBookings = bookingRepository.getTaskAssignByTaskerFollowDateTime(taskerId,
-                    selectedDate);
 
-            // Parse the selectedDate for comparison
-            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            int currentYear = LocalDate.now().getYear();
-            String fullDate = selectedDate.trim() + "/" + currentYear;
-            LocalDate filterDate = null;
+        try {
+            // Parse the selectedDate for filtering
+            LocalDateTime filterStartDateTime = null;
+            LocalDateTime filterEndDateTime = null;
+
             if (selectedDate != null && !selectedDate.isEmpty()) {
                 try {
-                    filterDate = LocalDate.parse(fullDate, dateFormatter);
+                    // Convert "dd/MM" format to LocalDateTime for start and end of day
+                    int currentYear = LocalDate.now().getYear();
+                    LocalDate filterDate = LocalDate.parse(selectedDate.trim() + "/" + currentYear,
+                            DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+                    filterStartDateTime = filterDate.atStartOfDay();
+                    filterEndDateTime = filterDate.plusDays(1).atStartOfDay();
                 } catch (DateTimeParseException e) {
-                    log.warn("Invalid date format: {}. Using ISO format (dd/MM)", fullDate);
+                    log.warn("Invalid date format: {}. Using ISO format (dd/MM)", selectedDate);
                     throw new IllegalArgumentException("Invalid date format. Please use dd/MM format.");
                 }
             }
 
+            // Get all assigned bookings for this tasker
+            List<Bookings> allAssignedBookings = bookingRepository.getTaskAssignByTasker(taskerId);
+
             // Filter bookings by date if a date was provided
+            final LocalDateTime finalFilterStartDateTime = filterStartDateTime;
+            final LocalDateTime finalFilterEndDateTime = filterEndDateTime;
+
             List<Bookings> filteredBookings = allAssignedBookings;
-            if (filterDate != null) {
-                final LocalDate finalFilterDate = filterDate;
+            if (finalFilterStartDateTime != null && finalFilterEndDateTime != null) {
                 filteredBookings = allAssignedBookings.stream()
                         .filter(booking -> {
-                            try {
-                                // Parse the booking's scheduled date
-                                LocalDateTime bookingDateTime = parseScheduledDate(booking.getScheduledDate());
-                                // Check if the booking date matches the filter date
-                                return bookingDateTime.toLocalDate().equals(finalFilterDate);
-                            } catch (Exception e) {
-                                log.error("Error parsing date for booking {}: {}", booking.getId(), e.getMessage());
-                                return false;
-                            }
+                            LocalDateTime bookingDateTime = booking.getScheduledStart();
+                            // Check if booking is on the selected date
+                            return bookingDateTime != null &&
+                                    bookingDateTime.isAfter(finalFilterStartDateTime) &&
+                                    bookingDateTime.isBefore(finalFilterEndDateTime);
                         })
                         .collect(Collectors.toList());
             }
@@ -471,13 +499,15 @@ public class BookingServiceImpl implements BookingService {
             // Sort by time on the selected date
             List<Bookings> sortedBookings = filteredBookings.stream()
                     .sorted((b1, b2) -> {
-                        try {
-                            LocalDateTime date1 = parseScheduledDate(b1.getScheduledDate());
-                            LocalDateTime date2 = parseScheduledDate(b2.getScheduledDate());
-                            return date1.compareTo(date2);
-                        } catch (Exception e) {
-                            return 0; // Keep original order if parsing fails
-                        }
+                        LocalDateTime date1 = b1.getScheduledStart();
+                        LocalDateTime date2 = b2.getScheduledStart();
+
+                        if (date1 == null)
+                            return 1;
+                        if (date2 == null)
+                            return -1;
+
+                        return date1.compareTo(date2);
                     })
                     .collect(Collectors.toList());
 
@@ -521,10 +551,11 @@ public class BookingServiceImpl implements BookingService {
                             .username(booking.getUser().getFirstLastName())
                             .phoneNumber(booking.getUser().getPhoneNumber())
                             .serviceName(booking.getService().getName())
-                            .scheduleDate(booking.getScheduledDate())
+                            .scheduledStart(booking.getScheduledStart())
+                            .scheduledEnd(booking.getScheduledEnd())
+                            .duration(booking.getDurationMinutes())
                             .taskDetails(booking.getTaskDetails())
                             .totalPrice(booking.getTotalPrice())
-                            .duration(booking.getDuration())
                             .address(booking.getAddress())
                             .cancelBy(booking.getCancelledByType().name())
                             .cancelReason(booking.getCancellationReason())
@@ -542,51 +573,6 @@ public class BookingServiceImpl implements BookingService {
                     return response;
                 })
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * Helper method to parse the complex date format
-     * 
-     * @param dateStr Format: "Monday, 16/04/2025 - 02:00 PM || Tuesday, 20 May 2025
-     *                - 07:00 AM"
-     * @return Parsed LocalDateTime
-     */
-    private LocalDateTime parseScheduledDate(String dateStr) {
-        try {
-            String[] parts = dateStr.split(" - ");
-            String datePart = parts[0].substring(parts[0].indexOf(",") + 1).trim();
-            String timePart = parts[1].trim();
-
-            DateTimeFormatter dateFormatter;
-            LocalDate date;
-
-            // Determine format and parse accordingly
-            if (datePart.contains("/")) {
-                // Format: 16/04/2025
-                dateFormatter = DateTimeFormatter.ofPattern("d/M/yyyy");
-                date = LocalDate.parse(datePart, dateFormatter);
-            } else {
-                // Format: 20 May 2025
-                dateFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ENGLISH);
-                try {
-                    date = LocalDate.parse(datePart, dateFormatter);
-                } catch (DateTimeParseException e) {
-                    // Try with short month format: 20 May 2025
-                    dateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH);
-                    date = LocalDate.parse(datePart, dateFormatter);
-                }
-            }
-
-            // Parse time
-            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH);
-            LocalTime time = LocalTime.parse(timePart, timeFormatter);
-
-            return LocalDateTime.of(date, time);
-
-        } catch (Exception e) {
-            log.error("Error parsing date with formatter: {}", dateStr, e);
-            throw e;
-        }
     }
 
     @Override

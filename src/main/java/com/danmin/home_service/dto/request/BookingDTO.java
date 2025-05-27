@@ -2,6 +2,7 @@ package com.danmin.home_service.dto.request;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 import com.danmin.home_service.common.BookingStatus;
@@ -25,9 +26,9 @@ public class BookingDTO implements Serializable {
 
     private String address;
 
-    private String scheduledDate;
-
-    private String duration;
+    private LocalDateTime scheduledStart;
+    private LocalDateTime scheduledEnd;
+    private Integer durationMinutes;
 
     private Map<String, Object> taskDetails;
 

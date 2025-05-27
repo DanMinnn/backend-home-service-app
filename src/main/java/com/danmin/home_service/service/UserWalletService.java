@@ -3,12 +3,9 @@ package com.danmin.home_service.service;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedHashSet;
-import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -184,11 +181,9 @@ public class UserWalletService {
 
         LocalDateTime createdAt = booking.getCreatedAt();
         LocalDateTime now = LocalDateTime.now();
-        String scheduleDate = booking.getScheduledDate();
+        LocalDateTime scheduleDateTime = booking.getScheduledStart();
 
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy - hh:mm a", Locale.ENGLISH);
-            LocalDateTime scheduleDateTime = LocalDateTime.parse(scheduleDate, formatter);
             BigDecimal refundAmount = BigDecimal.ZERO;
             String refundReason = "";
 
@@ -198,10 +193,10 @@ public class UserWalletService {
             } else if (booking.getBookingStatus().equals(BookingStatus.pending)) {
                 refundAmount = booking.getTotalPrice();
                 refundReason = "Refund 100% - booking not assigned yet";
-            } else if (now.isBefore(scheduleDateTime.minusHours(6))) {
+            } else if (scheduleDateTime != null && now.isBefore(scheduleDateTime.minusHours(6))) {
                 refundAmount = booking.getTotalPrice();
                 refundReason = "Refund 100% - cancelled at least 6 hours before appointment";
-            } else if (now.isBefore(scheduleDateTime.minusHours(1))) {
+            } else if (scheduleDateTime != null && now.isBefore(scheduleDateTime.minusHours(1))) {
                 refundAmount = booking.getTotalPrice().subtract(BigDecimal.valueOf(20.0));
                 refundReason = "Partial refund - cancelled between 1-6 hours before appointment";
             } else {
@@ -247,9 +242,6 @@ public class UserWalletService {
             } else {
                 log.warn("No refund processed for booking {}", bookingId);
             }
-        } catch (DateTimeParseException e) {
-            log.error("Error parsing schedule date for booking {}: {}", bookingId, e.getMessage());
-            throw new RuntimeException("Invalid schedule date format: " + scheduleDate, e);
         } catch (Exception e) {
             log.error("Error processing refund for booking {}: {}", bookingId, e.getMessage());
             throw new RuntimeException("Failed to process refund", e);

@@ -2,10 +2,6 @@ package com.danmin.home_service.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.Locale;
-
 import org.springframework.stereotype.Service;
 
 import com.danmin.home_service.common.BookingStatus;
@@ -130,18 +126,16 @@ public class TaskerWalletService {
         TaskerWallet wallet = taskerWalletRepository.findWalletByTaskerId(tasker.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found !"));
         LocalDateTime now = LocalDateTime.now();
-        String scheduleDate = booking.getScheduledDate();
+        LocalDateTime scheduledStart = booking.getScheduledStart();
 
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy - hh:mm a", Locale.ENGLISH);
-            LocalDateTime scheduleDateTime = LocalDateTime.parse(scheduleDate, formatter);
             BigDecimal fineAmount = BigDecimal.ZERO;
             String reason = "";
 
-            if (now.isBefore(scheduleDateTime.minusHours(8))) {
+            if (scheduledStart != null && now.isBefore(scheduledStart.minusHours(8))) {
                 fineAmount = booking.getTotalPrice().subtract(BigDecimal.valueOf(200000));
                 reason = cancelReason;
-            } else if (now.isBefore(scheduleDateTime.minusHours(2))) {
+            } else if (scheduledStart != null && now.isBefore(scheduledStart.minusHours(2))) {
                 fineAmount = booking.getTotalPrice().multiply(BigDecimal.valueOf(0.5));
                 reason = cancelReason;
             } else {
@@ -168,12 +162,9 @@ public class TaskerWalletService {
             } else {
                 log.warn("Free cancel job for booking {}", bookingId);
             }
-        } catch (DateTimeParseException e) {
-            log.error("Error parsing schedule date for booking {}: {}", bookingId, e.getMessage());
-            throw new RuntimeException("Invalid schedule date format: " + scheduleDate, e);
         } catch (Exception e) {
-            log.error("Error processing refund for booking {}: {}", bookingId, e.getMessage());
-            throw new RuntimeException("Failed to process refund", e);
+            log.error("Error processing fine for booking {}: {}", bookingId, e.getMessage());
+            throw new RuntimeException("Failed to process fine", e);
         }
     }
 }

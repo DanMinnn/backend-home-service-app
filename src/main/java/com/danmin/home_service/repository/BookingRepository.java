@@ -19,7 +19,7 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
         @Query("SELECT b FROM Bookings b WHERE b.user.id = :userId")
         Page<Bookings> getBookingByUserId(Pageable pageable, @Param("userId") Integer userId);
 
-        // For PostgreSQL
+        // For PostgreSQL - updated to use new timestamp fields
         @Query(value = "SELECT * FROM bookings b WHERE b.user_id = :userId " +
                         "ORDER BY CASE " +
                         "  WHEN b.status = 'pending' THEN 0 " +
@@ -28,8 +28,7 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
                         "  WHEN b.status = 'cancelled' THEN 3 " +
                         "  ELSE 4 END, " +
                         "CASE " +
-                        "  WHEN TO_TIMESTAMP(b.scheduled_date, 'YYYY-MM-DD HH24:MI') >= CURRENT_TIMESTAMP THEN TO_TIMESTAMP(b.scheduled_date, 'YYYY-MM-DD HH24:MI') "
-                        +
+                        "  WHEN b.scheduled_start >= CURRENT_TIMESTAMP THEN b.scheduled_start " +
                         "  ELSE CURRENT_TIMESTAMP + INTERVAL '1000 years' END ASC, " +
                         "b.created_at DESC", nativeQuery = true)
         Page<Bookings> findBookingsByUserIdOrderByScheduledDate(@Param("userId") Integer userId, Pageable pageable);
@@ -60,8 +59,12 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
         @Query("SELECT b FROM Bookings b WHERE b.tasker.id = :taskerId AND b.bookingStatus = 'assigned'")
         List<Bookings> getTaskAssignByTasker(@Param("taskerId") Long taskerId);
 
-        /* Get booking was assigned by Tasker follow date time */
-        @Query("SELECT b FROM Bookings b WHERE b.tasker.id = :taskerId AND b.bookingStatus = 'assigned' AND b.scheduledDate >= :dateTime")
+        /*
+         * Get booking was assigned by Tasker follow date time - updated to use
+         * scheduled_start
+         */
+        @Query("SELECT b FROM Bookings b WHERE b.tasker.id = :taskerId AND b.bookingStatus = 'assigned' " +
+                        "AND DATE_FORMAT(b.scheduledStart, '%d/%m') = :dateTime")
         List<Bookings> getTaskAssignByTaskerFollowDateTime(@Param("taskerId") Long taskerId,
                         @Param("dateTime") String dateTime);
 }

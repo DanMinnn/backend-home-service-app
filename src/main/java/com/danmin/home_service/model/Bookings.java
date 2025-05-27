@@ -1,6 +1,7 @@
 package com.danmin.home_service.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Map;
 
@@ -49,12 +50,6 @@ public class Bookings extends AbstractEntity<Long> {
     @Column(name = "address_name")
     private String address;
 
-    @Column(name = "scheduled_date")
-    private String scheduledDate;
-
-    @Column(name = "duration")
-    private String duration;
-
     @Type(JsonBinaryType.class)
     @Column(name = "task_details", columnDefinition = "jsonb")
     private Map<String, Object> taskDetails;
@@ -96,4 +91,13 @@ public class Bookings extends AbstractEntity<Long> {
 
     @Column(name = "payment_status")
     private String paymentStatus;
+
+    @Column(name = "scheduled_start")
+    private LocalDateTime scheduledStart;
+
+    @Column(name = "scheduled_end")
+    private LocalDateTime scheduledEnd;
+
+    @Column(name = "duration_minutes")
+    private Integer durationMinutes;
 }
