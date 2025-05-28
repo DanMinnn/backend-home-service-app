@@ -8,6 +8,7 @@ import com.danmin.home_service.dto.request.ReviewDTO;
 import com.danmin.home_service.dto.response.BookingDetailResponse;
 import com.danmin.home_service.dto.response.ResponseData;
 import com.danmin.home_service.dto.response.ResponseError;
+import com.danmin.home_service.exception.BusinessException;
 import com.danmin.home_service.exception.PaymentException;
 import com.danmin.home_service.exception.ResourceNotFoundException;
 import com.danmin.home_service.service.BookingService;
@@ -16,7 +17,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import java.util.List;
 import java.util.Map;
 
@@ -71,6 +71,8 @@ public class BookingController {
             bookingService.assignTasker(bookingId, taskerId);
             return new ResponseData<>(HttpStatus.ACCEPTED.value(), "Assigned tasker successfully");
 
+        } catch (BusinessException e) {
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
         } catch (Exception e) {
             log.error("Assigned failure", e);
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Can not assign tasker");
@@ -125,9 +127,9 @@ public class BookingController {
     }
 
     @Operation(summary = "Cancel booking by tasker")
-    @PutMapping("/cancel-booking-by-tasker/{bookingId}")
+    @PostMapping("/{bookingId}/cancel-booking-by-tasker")
 
-    public ResponseData<BookingDetailResponse> cancelBookingByTasker(@PathVariable(value = "bookingId") Long bookingId,
+    public ResponseData<?> cancelBookingByTasker(@PathVariable(value = "bookingId") Long bookingId,
             @RequestParam(value = "cancelReason") String cancelReason) {
 
         log.info("Cancel booking with booking id={}", bookingId);
@@ -135,7 +137,9 @@ public class BookingController {
         try {
             bookingService.cancelBookingByTasker(bookingId, cancelReason);
 
-            return new ResponseData<>(HttpStatus.OK.value(), "Cancel booking successfully");
+            return new ResponseData<>(HttpStatus.OK.value(), "Cancel task successfully");
+        } catch (BusinessException e) {
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
         } catch (ResourceNotFoundException e) {
             log.error("errorMessage={}", e.getMessage(), e.getCause());
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());

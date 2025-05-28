@@ -25,7 +25,6 @@ import com.danmin.home_service.dto.request.ReviewDTO;
 import com.danmin.home_service.dto.response.BookingDetailResponse;
 import com.danmin.home_service.dto.response.PageResponse;
 import com.danmin.home_service.exception.BusinessException;
-import com.danmin.home_service.exception.PaymentException;
 import com.danmin.home_service.exception.ResourceNotFoundException;
 import com.danmin.home_service.model.Bookings;
 import com.danmin.home_service.model.Payments;
@@ -180,15 +179,26 @@ public class BookingServiceImpl implements BookingService {
             throw new BusinessException("Invalid booking times");
         }
 
+        // check amount of tasks
+        int count = 0;
+        LocalDateTime currentTime = LocalDateTime.now();
         // Check for scheduling conflicts with existing bookings
         for (Bookings existingBooking : existingBookings) {
             try {
                 LocalDateTime existingStart = existingBooking.getScheduledStart();
                 LocalDateTime existingEnd = existingBooking.getScheduledEnd();
-
+                LocalDateTime existingUpdatedAt = existingBooking.getUpdatedAt();
                 if (existingStart == null || existingEnd == null) {
                     log.warn("Existing booking {} has invalid scheduled times", existingBooking.getId());
                     continue;
+                }
+
+                if (existingUpdatedAt.getDayOfMonth() == currentTime.getDayOfMonth()) {
+                    count++;
+                }
+
+                if (count == 3) {
+                    throw new BusinessException("You can only accept a maximum of 3 jobs per day.");
                 }
 
                 // Check if there's at least 2 hours between jobs
@@ -214,26 +224,14 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
-        // Check if tasker provides this service
-        Boolean hasService = tasker.getTaskerServices().stream()
-                .anyMatch(ts -> ts.getService().getId().equals(booking.getService().getId()));
-
-        if (!hasService) {
-            throw new ResourceNotFoundException("Tasker does not provide this service");
-        }
-
         // Verify tasker is available and has sufficient balance
-        if (tasker.getAvailabilityStatus().name().equals("available")
-                && taskerWalletService.checkBalanceAccount(taskerId, bookingId)) {
+        if (tasker.getAvailabilityStatus().name().equals("available")) {
             booking.setTasker(tasker);
             booking.setBookingStatus(BookingStatus.assigned);
-            tasker.setAvailabilityStatus(AvailabilityStatus.busy);
             taskerRepository.save(tasker);
-        } else {
-            throw new PaymentException("Balance is not enough or tasker is not available");
+            bookingRepository.save(booking);
         }
 
-        bookingRepository.save(booking);
     }
 
     @Override
@@ -579,14 +577,15 @@ public class BookingServiceImpl implements BookingService {
 
         Bookings booking = getBookingById(bookingId);
 
-        Long taskerId = booking.getTasker().getId().longValue();
+        Integer taskerId = booking.getTasker().getId();
 
-        Tasker tasker = taskerRepository.findById(taskerId)
+        Tasker tasker = taskerRepository.findById(taskerId.longValue())
                 .orElseThrow(() -> new ResourceNotFoundException("Tasker not found with id: " + taskerId));
 
         // Check cancellations in the last 7 days
         LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
-        int cancelCount = bookingRepository.countCancelledBookingsByTaskerInLast7Days(taskerId, sevenDaysAgo);
+        int cancelCount = bookingRepository.countCancelledBookingsByTaskerInLast7Days(tasker.getId().longValue(),
+                sevenDaysAgo);
 
         if (cancelCount >= 2) {
             throw new BusinessException(
@@ -598,13 +597,13 @@ public class BookingServiceImpl implements BookingService {
                     taskerId);
         }
 
+        taskerWalletService.fineTaskerCancelJob(tasker.getId().longValue(), bookingId, cancelReason);
+
         booking.setBookingStatus(BookingStatus.cancelled);
         booking.setCancelledByType(CancelledByType.tasker);
         booking.setCancellationReason(cancelReason);
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
-
-        tasker.setAvailabilityStatus(AvailabilityStatus.available);
         taskerRepository.save(tasker);
 
     }
