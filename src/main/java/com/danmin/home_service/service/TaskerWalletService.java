@@ -53,14 +53,15 @@ public class TaskerWalletService {
         if (booking.getBookingStatus().equals(BookingStatus.completed)) {
 
             BigDecimal income = booking.getTotalPrice().multiply(BigDecimal.valueOf(0.8));
-            taskerWallet.setBalance(income);
+            taskerWallet.setBalance(taskerWallet.getBalance().add(income));
             taskerWallet.setTasker(tasker);
             taskerWallet.setUpdatedAt(LocalDateTime.now());
 
             taskerWalletRepository.save(taskerWallet);
 
             taskerTransactionRepository
-                    .save(TaskerTransaction.builder().amount(income).transactionType(TransactionType.INCOME)
+                    .save(TaskerTransaction.builder().tasker(tasker).amount(income)
+                            .transactionType(TransactionType.INCOME)
                             .transactionStatus(TransactionStatus.SUCCESS)
                             .description("Income from job").build());
         }

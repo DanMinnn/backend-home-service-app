@@ -148,7 +148,7 @@ public class BookingController {
     }
 
     @Operation(summary = "Completed booking job")
-    @PutMapping("/completed-booking/{bookingId}")
+    @PutMapping("/{bookingId}/completed-booking")
 
     public ResponseData<BookingDetailResponse> completedBooking(@PathVariable(value = "bookingId") Long bookingId) {
 
@@ -157,7 +157,7 @@ public class BookingController {
         try {
             bookingService.completedJob(bookingId);
 
-            return new ResponseData<>(HttpStatus.OK.value(), "Completed booking successfully");
+            return new ResponseData<>(HttpStatus.OK.value(), "Task completed successfully");
         } catch (ResourceNotFoundException e) {
             log.error("errorMessage={}", e.getMessage(), e.getCause());
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
