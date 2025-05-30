@@ -41,6 +41,7 @@ import com.danmin.home_service.repository.ServiceRepository;
 import com.danmin.home_service.repository.TaskerRepository;
 import com.danmin.home_service.repository.UserRepository;
 import com.danmin.home_service.service.BookingService;
+import com.danmin.home_service.service.NotificationService;
 import com.danmin.home_service.service.PaymentService;
 import com.danmin.home_service.service.TaskerWalletService;
 import com.danmin.home_service.service.UserWalletService;
@@ -69,7 +70,9 @@ public class BookingServiceImpl implements BookingService {
     private final PaymentRepository paymentRepository;
 
     private final ServicePackageRepository servicePackageRepository;
+    private final NotificationService notificationService;
 
+    // =================== CREATE BOOKING METHODS ===================
     @Transactional(rollbackOn = Exception.class)
     @Override
     public Object createBooking(BookingDTO req, HttpServletRequest request)
@@ -124,7 +127,7 @@ public class BookingServiceImpl implements BookingService {
 
             bookings.setPaymentStatus("paid");
             bookingRepository.save(bookings);
-
+            notificationService.notifyAvailableTaskers(bookings.getId());
             Map<String, Object> response = new HashMap<>();
             response.put("bookingId", bookings.getId());
             response.put("status", "confirmed");
@@ -139,11 +142,11 @@ public class BookingServiceImpl implements BookingService {
 
             bookings.setPaymentStatus("paid");
             bookingRepository.save(bookings);
-
+            notificationService.notifyAvailableTaskers(bookings.getId());
             return response;
         } else {
             bookingRepository.save(bookings);
-
+            notificationService.notifyAvailableTaskers(bookings.getId());
             Map<String, Object> response = new HashMap<>();
             response.put("bookingId", bookings.getId());
             response.put("status", "unpaid");
@@ -159,6 +162,7 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + bookingId));
     }
 
+    // =================== ASSIGN TASKER METHODS ===================
     @Transactional(rollbackOn = Exception.class)
     @Override
     public void assignTasker(long bookingId, long taskerId) {
@@ -224,16 +228,17 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
-        // Verify tasker is available and has sufficient balance
         if (tasker.getAvailabilityStatus().name().equals("available")) {
             booking.setTasker(tasker);
             booking.setBookingStatus(BookingStatus.assigned);
             taskerRepository.save(tasker);
             bookingRepository.save(booking);
-        }
 
+            notificationService.notifyJobAccepted(bookingId, taskerId);
+        }
     }
 
+    // =================== GET BOOKING - GET TASK METHODS ===================
     @Override
     public PageResponse<?> getBookingDetail(int pageNo, int pageSize, Integer userId) {
         // Fetch all bookings for the user
@@ -547,6 +552,7 @@ public class BookingServiceImpl implements BookingService {
                 .collect(Collectors.toList());
     }
 
+    // =================== CANCEL TASK - CANCEL BOOKING METHODS ===================
     @Override
     public void cancelBookingByUser(long bookingId, String cancelReason) {
 
@@ -606,8 +612,11 @@ public class BookingServiceImpl implements BookingService {
         bookingRepository.save(booking);
         taskerRepository.save(tasker);
 
+        notificationService.notifyJobCancelled(bookingId, cancelReason, booking.getCancelledByType().name());
+
     }
 
+    // =================== COMPLETED JOB METHODS ===================
     @Override
     public void completedJob(long bookingId) {
         Bookings booking = getBookingById(bookingId);
@@ -627,6 +636,7 @@ public class BookingServiceImpl implements BookingService {
 
         taskerWalletService.incomeCompleteTask(booking.getId(), taskerId);
 
+        notificationService.notifyJobCompleted(bookingId, taskerId);
     }
 
     @Transactional(rollbackOn = Exception.class)

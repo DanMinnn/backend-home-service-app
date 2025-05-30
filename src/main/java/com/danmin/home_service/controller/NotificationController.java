@@ -1,18 +1,20 @@
 package com.danmin.home_service.controller;
 
 import java.util.List;
-import java.util.Map;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+import com.danmin.home_service.dto.notification.FCMTokenRequest;
+import com.danmin.home_service.dto.notification.TaskerNotificationResponse;
+import com.danmin.home_service.dto.notification.UserNotificationResponse;
+import com.danmin.home_service.dto.response.ResponseData;
+import com.danmin.home_service.model.FCMToken;
+import com.danmin.home_service.service.FirebaseNotificationService;
+import com.danmin.home_service.service.NotificationService;
 
-import com.danmin.home_service.model.TaskerNotification;
-import com.danmin.home_service.service.TaskerNotificationService;
-
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,32 +24,78 @@ import lombok.extern.slf4j.Slf4j;
 @Tag(name = "Notification Controller")
 @RequestMapping("/notifications")
 public class NotificationController {
-    private final TaskerNotificationService notificationService;
+    private final NotificationService notificationService;
+    private final FirebaseNotificationService firebaseNotificationService;
 
-    @PostMapping("/bookings/{bookingId}/notify-taskers")
-    public ResponseEntity<?> notifyNearbyTaskers(@PathVariable Long bookingId) {
-        List<TaskerNotification> notifications = notificationService.notifyNearByAvailableTaskers(bookingId);
-        return ResponseEntity.ok(Map.of(
-                "message", "Đã gửi thông báo đến " + notifications.size() + " tasker gần nhất",
-                "notificationCount", notifications.size()));
+    @Operation(summary = "Register FCM token for user or tasker")
+    @PostMapping("/fcm/register")
+    public ResponseData<?> registerFCMToken(@Valid @RequestBody FCMTokenRequest request) {
+        FCMToken token = FCMToken.builder()
+                .token(request.getToken())
+                .userId(request.getUserId())
+                .taskerId(request.getTaskerId())
+                .deviceId(request.getDeviceId())
+                .build();
+
+        firebaseNotificationService.saveToken(token);
+        return new ResponseData(HttpStatus.OK.value(), "FCM token registered successfully");
     }
 
-    // @GetMapping("/tasker/{taskerId}")
-    // public ResponseEntity<?> getTaskerNotifications(
-    // @PathVariable Integer taskerId,
-    // @RequestParam(defaultValue = "SENT") NotificationStatus status) {
-    // List<TaskerNotification> notifications =
-    // notificationService.getNotificationsByTaskerAndStatus(taskerId,
-    // status);
-    // return ResponseEntity.ok(notifications);
-    // }
+    // =================== USER ENDPOINTS ===================
+    @Operation(summary = "Get notifications for user")
+    @GetMapping("/users/{userId}")
+    public ResponseData<List<UserNotificationResponse>> getUserNotifications(@PathVariable Long userId) {
+        List<UserNotificationResponse> notifications = notificationService.getUserNotifications(userId);
+        return new ResponseData(HttpStatus.OK.value(), "User notifications retrieved successfully", notifications);
+    }
 
-    // @PatchMapping("/{notificationId}/status")
-    // public ResponseEntity<?> updateNotificationStatus(
-    // @PathVariable Long notificationId,
-    // @RequestParam NotificationStatus status) {
-    // TaskerNotification notification =
-    // notificationService.updateNotificationStatus(notificationId, status);
-    // return ResponseEntity.ok(notification);
-    // }
+    @Operation(summary = "Get unread count for user")
+    @GetMapping("/users/{userId}/unread-count")
+    public ResponseData<Integer> getUserUnreadCount(@PathVariable Long userId) {
+        int count = notificationService.getUserUnreadCount(userId);
+        return new ResponseData(HttpStatus.OK.value(), "Unread count retrieved", count);
+    }
+
+    @Operation(summary = "Mark user notification as read")
+    @PutMapping("/users/{notificationId}/read")
+    public ResponseData<?> markUserNotificationAsRead(@PathVariable Long notificationId) {
+        notificationService.markUserNotificationAsRead(notificationId);
+        return new ResponseData(HttpStatus.OK.value(), "Notification marked as read");
+    }
+
+    @Operation(summary = "Clear all user notifications")
+    @DeleteMapping("/users/{userId}")
+    public ResponseData<?> clearUserNotifications(@PathVariable Long userId) {
+        notificationService.clearUserNotifications(userId);
+        return new ResponseData(HttpStatus.OK.value(), "All user notifications cleared");
+    }
+
+    // =================== TASKER ENDPOINTS ===================
+    @Operation(summary = "Get notifications for tasker")
+    @GetMapping("/taskers/{taskerId}")
+    public ResponseData<List<TaskerNotificationResponse>> getTaskerNotifications(@PathVariable Long taskerId) {
+        List<TaskerNotificationResponse> notifications = notificationService.getTaskerNotifications(taskerId);
+        return new ResponseData(HttpStatus.OK.value(), "Tasker notifications retrieved successfully", notifications);
+    }
+
+    @Operation(summary = "Get unread count for tasker")
+    @GetMapping("/taskers/{taskerId}/unread-count")
+    public ResponseData<Integer> getTaskerUnreadCount(@PathVariable Long taskerId) {
+        int count = notificationService.getTaskerUnreadCount(taskerId);
+        return new ResponseData(HttpStatus.OK.value(), "Unread count retrieved", count);
+    }
+
+    @Operation(summary = "Mark tasker notification as read")
+    @PutMapping("/taskers/{notificationId}/read")
+    public ResponseData<?> markTaskerNotificationAsRead(@PathVariable Long notificationId) {
+        notificationService.markTaskerNotificationAsRead(notificationId);
+        return new ResponseData(HttpStatus.OK.value(), "Notification marked as read");
+    }
+
+    @Operation(summary = "Clear all tasker notifications")
+    @DeleteMapping("/taskers/{taskerId}")
+    public ResponseData<?> clearTaskerNotifications(@PathVariable Long taskerId) {
+        notificationService.clearTaskerNotifications(taskerId);
+        return new ResponseData(HttpStatus.OK.value(), "All tasker notifications cleared");
+    }
 }

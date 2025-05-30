@@ -2,9 +2,17 @@ package com.danmin.home_service.model;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
 import com.danmin.home_service.common.NotificationType;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.*;
 
 @Getter
@@ -13,13 +21,13 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "tasker_notification")
-public class TaskerNotification extends AbstractEntityCreatedAt<Long> {
-    @ManyToOne
-    @JoinColumn(name = "tasker_id")
-    private Tasker tasker;
+@Table(name = "user_notifications")
+public class UserNotifications extends AbstractEntityCreatedAt<Long> {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id")
     private Bookings booking;
 
@@ -37,5 +45,4 @@ public class TaskerNotification extends AbstractEntityCreatedAt<Long> {
     @Column(name = "is_read", nullable = false)
     @Builder.Default
     private Boolean isRead = false;
-
 }

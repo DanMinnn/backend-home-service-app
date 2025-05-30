@@ -33,4 +33,18 @@ public interface TaskerRepository extends JpaRepository<Tasker, Long> {
       @Param("radiusInMeters") double radiusInMeters,
       @Param("serviceId") Long serviceId,
       @Param("limit") int limit);
+
+  // notify to tasker with service corresponds
+  @Query(value = """
+          SELECT t.id
+          FROM tasker t
+          JOIN tasker_services ts ON t.id = ts.tasker_id
+          WHERE t.availability_status = 'available'
+            AND ts.service_id = :serviceId
+          LIMIT :limit
+      """, nativeQuery = true)
+  List<Tasker> findAvailableTaskers(
+      @Param("serviceId") Long serviceId,
+      @Param("limit") int limit);
+
 }
