@@ -4,6 +4,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.danmin.home_service.common.SenderType;
+import com.danmin.home_service.config.CustomizeRequestFilter;
 import com.danmin.home_service.dto.request.ChatMessageDTO;
 import com.danmin.home_service.dto.request.ChatRoomDTO;
 import com.danmin.home_service.dto.response.ResponseData;
@@ -22,6 +24,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,12 +40,22 @@ public class ChatController {
         private final ChatMessageService chatMessageService;
 
         @Operation(summary = "Get chat room for user or tasker")
-        @GetMapping("/user/{userId}")
+        @GetMapping("/user/")
         public ResponseData<List<ChatRoomDTO>> getUserChatRoom(Authentication authentication) {
+                if (authentication == null) {
+                        throw new IllegalStateException("Authentication is null. Are you sending token?");
+                }
 
-                // UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-                Integer user_id = Integer
-                                .parseInt(((Map<String, Object>) authentication.getDetails()).get("userId").toString());
+                Integer userId;
+                if (authentication.getDetails() instanceof CustomizeRequestFilter.CustomWebAuthenticationDetails) {
+                        CustomizeRequestFilter.CustomWebAuthenticationDetails details = (CustomizeRequestFilter.CustomWebAuthenticationDetails) authentication
+                                        .getDetails();
+                        userId = details.getUserId();
+                } else {
+                        // Fallback to extract from principal if details don't contain userId
+                        userId = Integer.parseInt(
+                                        ((Map<String, Object>) authentication.getDetails()).get("userId").toString());
+                }
 
                 boolean isUser = authentication.getAuthorities().stream()
                                 .anyMatch(a -> a.getAuthority().equals("ROLE_USER"));
@@ -52,25 +65,15 @@ public class ChatController {
                 List<ChatRoomDTO> chatRooms;
 
                 if (isUser) {
-                        chatRooms = chatRoomService.getChatRoomForUser(user_id);
+                        chatRooms = chatRoomService.getChatRoomForUser(userId);
                 } else if (isTasker) {
-                        chatRooms = chatRoomService.getChatRoomForTasker(user_id);
+                        chatRooms = chatRoomService.getChatRoomForTasker(userId);
                 } else {
                         return new ResponseError(HttpStatus.FORBIDDEN.value(), "You don't have permission");
                 }
 
                 return new ResponseData<List<ChatRoomDTO>>(HttpStatus.ACCEPTED.value(), "chat room", chatRooms);
         }
-
-        // @Operation(summary = "Get chat room for tasker")
-        // @GetMapping("/user/{taskerId}")
-        // public ResponseData<List<ChatRoomDTO>> getTaskerChatRoom(@PathVariable(value
-        // = "taskerId") Integer taskerId) {
-
-        // return new ResponseData<List<ChatRoomDTO>>(HttpStatus.ACCEPTED.value(),
-        // "tasker chat room",
-        // chatRoomService.getChatRoomForUser(taskerId));
-        // }
 
         @Operation(summary = "Get chat room")
         @GetMapping("/room")
@@ -84,12 +87,23 @@ public class ChatController {
 
         @Operation(summary = "Get message chat room")
         @GetMapping("/message/{roomId}")
-        public ResponseData<List<ChatMessageDTO>> getChatRoom(@PathVariable(value = "roomId") Integer roomId,
+        @Transactional
+        public ResponseData<List<ChatMessageDTO>> getChatRoom(
+                        @PathVariable(value = "roomId") Integer roomId,
+                        @RequestParam(required = false, defaultValue = "0") Integer page,
+                        @RequestParam(required = false, defaultValue = "50") Integer size,
                         Authentication authentication) {
 
-                Integer userId = Integer
-                                .parseInt(((Map<String, Object>) authentication.getDetails()).get("userId").toString());
-
+                Integer userId;
+                if (authentication.getDetails() instanceof CustomizeRequestFilter.CustomWebAuthenticationDetails) {
+                        CustomizeRequestFilter.CustomWebAuthenticationDetails details = (CustomizeRequestFilter.CustomWebAuthenticationDetails) authentication
+                                        .getDetails();
+                        userId = details.getUserId();
+                } else {
+                        // Fallback to extract from principal if details don't contain userId
+                        userId = Integer.parseInt(
+                                        ((Map<String, Object>) authentication.getDetails()).get("userId").toString());
+                }
                 // check permission on user to access this chat room
                 ChatRoom chatRoom = chatRoomService.getChatRoomById(roomId);
                 if (chatRoom == null) {
@@ -108,9 +122,24 @@ public class ChatController {
                         return new ResponseError(HttpStatus.FORBIDDEN.value(), "Can not allow this room");
                 }
 
-                List<ChatMessageDTO> messages = chatMessageService.getChatMessages(roomId);
+                // Mark messages as read when fetched
+                if (isUser) {
+                        chatMessageService.markMessagesAsRead(roomId, userId, SenderType.user);
+                } else if (isTasker) {
+                        chatMessageService.markMessagesAsRead(roomId, userId, SenderType.tasker);
+                }
 
-                return new ResponseData<List<ChatMessageDTO>>(HttpStatus.ACCEPTED.value(), "message chat room",
+                List<ChatMessageDTO> messages;
+
+                // If pagination parameters are provided, use them
+                if (page != null && size != null) {
+                        messages = chatMessageService.getChatMessages(roomId, page, size);
+                } else {
+                        messages = chatMessageService.getChatMessages(roomId);
+                }
+
+                return new ResponseData<List<ChatMessageDTO>>(HttpStatus.ACCEPTED.value(),
+                                "message chat room",
                                 messages);
         }
 
@@ -128,10 +157,16 @@ public class ChatController {
                         @RequestBody ChatRoomDTO request,
                         Authentication authentication) {
 
-                // Lấy userId từ token xác thực
-                Integer userId = Integer
-                                .parseInt(((Map<String, Object>) authentication.getDetails()).get("userId").toString());
-
+                Integer userId;
+                if (authentication.getDetails() instanceof CustomizeRequestFilter.CustomWebAuthenticationDetails) {
+                        CustomizeRequestFilter.CustomWebAuthenticationDetails details = (CustomizeRequestFilter.CustomWebAuthenticationDetails) authentication
+                                        .getDetails();
+                        userId = details.getUserId();
+                } else {
+                        // Fallback to extract from principal if details don't contain userId
+                        userId = Integer.parseInt(
+                                        ((Map<String, Object>) authentication.getDetails()).get("userId").toString());
+                }
                 // Kiểm tra role
                 boolean isUser = authentication.getAuthorities().stream()
                                 .anyMatch(a -> a.getAuthority().equals("ROLE_USER"));
@@ -147,5 +182,41 @@ public class ChatController {
                 chatRoomService.createChatRoom(request, userIdForRoom, taskerIdForRoom);
 
                 return new ResponseData<>(HttpStatus.ACCEPTED.value(), "create chat room");
+        }
+
+        @Operation(summary = "Mark messages as read")
+        @PostMapping("/message/{roomId}/read")
+        @Transactional
+        public ResponseData<String> markMessagesAsRead(
+                        @PathVariable(value = "roomId") Integer roomId,
+                        Authentication authentication) {
+
+                Integer userId;
+                if (authentication.getDetails() instanceof CustomizeRequestFilter.CustomWebAuthenticationDetails) {
+                        CustomizeRequestFilter.CustomWebAuthenticationDetails details = (CustomizeRequestFilter.CustomWebAuthenticationDetails) authentication
+                                        .getDetails();
+                        userId = details.getUserId();
+                } else {
+                        // Fallback to extract from principal if details don't contain userId
+                        userId = Integer.parseInt(
+                                        ((Map<String, Object>) authentication.getDetails()).get("userId").toString());
+                }
+                ChatRoom chatRoom = chatRoomService.getChatRoomById(roomId);
+                if (chatRoom == null) {
+                        return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Room not found");
+                }
+
+                boolean isUser = authentication.getAuthorities().stream()
+                                .anyMatch(a -> a.getAuthority().equals("ROLE_USER"));
+                boolean isTasker = authentication.getAuthorities().stream()
+                                .anyMatch(a -> a.getAuthority().equals("ROLE_TASKER"));
+
+                if (isUser) {
+                        chatMessageService.markMessagesAsRead(roomId, userId, SenderType.user);
+                } else if (isTasker) {
+                        chatMessageService.markMessagesAsRead(roomId, userId, SenderType.tasker);
+                }
+
+                return new ResponseData<>(HttpStatus.OK.value(), "Messages marked as read", null);
         }
 }

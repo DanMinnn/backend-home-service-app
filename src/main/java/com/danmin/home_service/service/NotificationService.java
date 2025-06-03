@@ -9,9 +9,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.danmin.home_service.common.NotificationType;
+import com.danmin.home_service.common.SenderType;
 import com.danmin.home_service.dto.notification.FCMNotificationResponse;
 import com.danmin.home_service.dto.notification.TaskerNotificationResponse;
 import com.danmin.home_service.dto.notification.UserNotificationResponse;
+import com.danmin.home_service.dto.request.ChatRoomDTO;
 import com.danmin.home_service.model.Bookings;
 import com.danmin.home_service.model.Tasker;
 import com.danmin.home_service.model.TaskerNotification;
@@ -34,6 +36,8 @@ public class NotificationService {
         private final BookingRepository bookingsRepository;
         private final TaskerRepository taskerRepository;
         private final FirebaseNotificationService firebaseNotificationService;
+        private final ChatRoomService chatRoomService;
+        private final ChatMessageService chatMessageService;
 
         // =================== USER NOTIFICATION METHODS ===================
         public List<UserNotificationResponse> getUserNotifications(Long userId) {
@@ -213,6 +217,64 @@ public class NotificationService {
 
                         userNotificationRepository.save(userNotification);
                         sendPushNotificationToUser(booking.getUser(), booking, title, userNotification.getMessage());
+                }
+        }
+
+        // =================== CHAT NOTIFICATION METHODS ===================
+        public Map<String, Object> getUserChatUnreadCount(Long userId) {
+                try {
+                        // Get all chat rooms for the user
+                        List<ChatRoomDTO> chatRooms = chatRoomService.getChatRoomForUser(userId.intValue());
+
+                        int totalUnreadCount = 0;
+                        List<Integer> unreadRooms = new ArrayList<>();
+
+                        for (ChatRoomDTO room : chatRooms) {
+                                int unreadCount = chatMessageService.getUnreadMessageCount(
+                                                room.getId(), userId.intValue(), SenderType.user);
+                                if (unreadCount > 0) {
+                                        totalUnreadCount += unreadCount;
+                                        unreadRooms.add(room.getId());
+                                }
+                        }
+
+                        Map<String, Object> result = new HashMap<>();
+                        result.put("totalUnreadCount", totalUnreadCount);
+                        result.put("unreadRooms", unreadRooms);
+
+                        return result;
+                } catch (Exception e) {
+                        log.error("Error getting user chat unread count for userId: {}", userId, e);
+                        return Map.of("totalUnreadCount", 0, "unreadRooms", List.of());
+                }
+        }
+
+        public Map<String, Object> getTaskerChatUnreadCount(Long taskerId) {
+                try {
+                        // Get all chat rooms for the tasker
+                        List<ChatRoomDTO> chatRooms = chatRoomService.getChatRoomForTasker(taskerId.intValue());
+
+                        int totalUnreadCount = 0;
+                        List<Integer> unreadRooms = new ArrayList<>();
+
+                        for (ChatRoomDTO room : chatRooms) {
+                                int unreadCount = chatMessageService.getUnreadMessageCount(
+                                                room.getId(), taskerId.intValue(), SenderType.tasker);
+                                if (unreadCount > 0) {
+                                        totalUnreadCount += unreadCount;
+                                        unreadRooms.add(room.getId());
+                                }
+                        }
+
+                        Map<String, Object> result = new HashMap<>();
+                        result.put("totalUnreadCount", totalUnreadCount);
+                        result.put("unreadRooms", unreadRooms);
+
+                        return result;
+                } catch (Exception e) {
+                        log.error("Error getting tasker chat unread count for taskerId: {}",
+                                        taskerId, e);
+                        return Map.of("totalUnreadCount", 0, "unreadRooms", List.of());
                 }
         }
 

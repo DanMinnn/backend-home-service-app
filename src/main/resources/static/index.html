@@ -11,15 +11,25 @@
     <div>
         <h1>WebSocket Chat Test</h1>
         <div>
-            <input type="text" id="token" placeholder="JWT Token" style="width: 300px;" />
+            <label>Test Token Generator:</label>
+            <select id="roleSelect">
+                <option value="user">User</option>
+                <option value="tasker">Tasker</option>
+            </select>
+            <input type="number" id="testUserId" placeholder="User ID" value="30" />
+            <button onclick="generateTestToken()">Generate Test Token</button>
+        </div>
+        <div style="margin-top: 10px;">
+            <input type="text" id="token" placeholder="JWT Token" style="width: 500px;" />
             <button onclick="connect()">Connect</button>
+            <button onclick="disconnect()">Disconnect</button>
         </div>
         <div style="margin-top: 20px;">
             <select id="senderType">
                 <option value="user">User</option>
                 <option value="tasker">Tasker</option>
             </select>
-            <input type="number" id="roomId" placeholder="Room ID" />
+            <input type="number" id="roomId" placeholder="Room ID" value="1" />
             <input type="number" id="senderId" placeholder="Sender ID" />
             <input type="text" id="message" placeholder="Message" />
             <button onclick="sendMessage()">Send</button>
@@ -34,6 +44,23 @@
         let userId = null;
         let role = null;
 
+        function generateTestToken() {
+            const role = document.getElementById('roleSelect').value;
+            const id = document.getElementById('testUserId').value;
+
+            fetch(`/api/test-chat/token?role=${role}&id=${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('token').value = data.token;
+                    document.getElementById('senderId').value = id;
+                    document.getElementById('senderType').value = role;
+                })
+                .catch(error => {
+                    console.error('Error generating token:', error);
+                    alert('Error generating token: ' + error.message);
+                });
+        }
+
         function connect() {
             const token = document.getElementById('token').value;
             if (!token) {
@@ -41,32 +68,79 @@
                 return;
             }
 
-            const socket = new SockJS('http://localhost:8080/ws?token=' + token);
-            stompClient = Stomp.over(socket);
+            // Disconnect first if already connected
+            if (stompClient !== null && stompClient.connected) {
+                disconnect();
+            }
 
-            stompClient.connect({}, function (frame) {
-                console.log('Connected: ' + frame);
+            try {
+                const socket = new SockJS('http://localhost:8080/ws?token=' + token);
+                stompClient = Stomp.over(socket);
 
-                // Parse JWT để lấy userId và role
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                userId = payload.userId;
+                // Enable debug logging
+                stompClient.debug = function (str) {
+                    console.log('STOMP: ' + str);
+                };
 
-                // Check roles
-                const roles = payload.roles;
-                role = roles.find(r => r.authority === 'ROLE_USER') ? 'user' : 'tasker';
+                stompClient.connect({}, function (frame) {
+                    console.log('Connected: ' + frame);
+                    addMessage('System', 'Connected to WebSocket');
 
-                // Subscribe dựa vào role
-                if (role === 'user') {
-                    stompClient.subscribe('/queue/user.' + userId, onMessageReceived);
-                } else {
-                    stompClient.subscribe('/queue/tasker.' + userId, onMessageReceived);
-                }
+                    // Parse JWT để lấy userId và role
+                    try {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        userId = payload.userId;
+                        console.log('User ID from token:', userId);
 
-                document.getElementById('messages').innerHTML += '<div>Connected as ' + role + ' with ID ' + userId + '</div>';
-            }, function (error) {
-                console.log('Connection error: ' + error);
-                document.getElementById('messages').innerHTML += '<div style="color: red;">Connection error: ' + error + '</div>';
-            });
+                        // Check roles
+                        const roles = payload.roles;
+                        console.log('Roles from token:', roles);
+
+                        if (Array.isArray(roles)) {
+                            role = roles.find(r =>
+                                (typeof r === 'string' && r.includes('USER')) ||
+                                (typeof r === 'object' && r.authority && r.authority.includes('USER'))
+                            ) ? 'user' : 'tasker';
+                        }
+
+                        console.log('Determined role:', role);
+                        document.getElementById('senderId').value = userId;
+                        document.getElementById('senderType').value = role;
+
+                        // Subscribe dựa vào role
+                        if (role === 'user') {
+                            stompClient.subscribe('/queue/user.' + userId, onMessageReceived);
+                            addMessage('System', 'Subscribed to user queue: /queue/user.' + userId);
+                        } else {
+                            stompClient.subscribe('/queue/tasker.' + userId, onMessageReceived);
+                            addMessage('System', 'Subscribed to tasker queue: /queue/tasker.' + userId);
+                        }
+
+                        // Subscribe to user status updates
+                        stompClient.subscribe('/topic/user-status', onStatusUpdate);
+                        addMessage('System', 'Subscribed to user status updates');
+
+                        addMessage('System', 'Connected as ' + role + ' with ID ' + userId);
+                    } catch (e) {
+                        console.error('Error parsing token:', e);
+                        addMessage('System', 'Error parsing token: ' + e.message, 'error');
+                    }
+                }, function (error) {
+                    console.log('Connection error: ' + error);
+                    addMessage('System', 'Connection error: ' + error, 'error');
+                });
+            } catch (error) {
+                console.error('Error creating connection:', error);
+                addMessage('System', 'Error creating connection: ' + error.message, 'error');
+            }
+        }
+
+        function disconnect() {
+            if (stompClient !== null) {
+                stompClient.disconnect();
+                stompClient = null;
+                addMessage('System', 'Disconnected from WebSocket');
+            }
         }
 
         function sendMessage() {
@@ -86,23 +160,52 @@
             }
 
             const chatMessage = {
-                roomId: roomId,
+                roomId: parseInt(roomId),
                 senderType: senderType,
                 senderId: parseInt(senderId),
                 messageText: messageText
             };
 
+            console.log('Sending message:', chatMessage);
             stompClient.send('/app/chat.sendMessage', {}, JSON.stringify(chatMessage));
             document.getElementById('message').value = '';
+
+            addMessage('You', messageText, 'sent');
         }
 
         function onMessageReceived(payload) {
+            console.log('Received message:', payload.body);
             const message = JSON.parse(payload.body);
-            document.getElementById('messages').innerHTML +=
-                '<div style="margin-bottom: 10px;">' +
-                '<strong>' + message.senderName + ':</strong> ' +
-                message.messageText +
-                '</div>';
+
+            if (message.type === 'messageRead') {
+                addMessage('System', 'Messages marked as read', 'info');
+            } else if (message.type === 'typing') {
+                addMessage('System', message.userId + ' is ' + (message.isTyping ? 'typing...' : 'stopped typing'), 'info');
+            } else {
+                addMessage(message.senderName || 'Unknown', message.messageText, 'received');
+            }
+        }
+
+        function onStatusUpdate(payload) {
+            console.log('Received status update:', payload.body);
+            const status = JSON.parse(payload.body);
+            addMessage('System', 'User ' + status.userId + ' is now ' + (status.isOnline ? 'online' : 'offline'), 'info');
+        }
+
+        function addMessage(sender, text, type = 'normal') {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.style.marginBottom = '10px';
+
+            let color = '#000';
+            if (type === 'error') color = '#ff0000';
+            else if (type === 'info') color = '#0066cc';
+            else if (type === 'sent') color = '#008800';
+            else if (type === 'received') color = '#000088';
+
+            messageDiv.innerHTML = `<span style="color: ${color};"><strong>${sender}:</strong> ${text}</span>`;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
     </script>
 </body>

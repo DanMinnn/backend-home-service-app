@@ -1,6 +1,7 @@
 package com.danmin.home_service.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -97,5 +98,22 @@ public class NotificationController {
     public ResponseData<?> clearTaskerNotifications(@PathVariable Long taskerId) {
         notificationService.clearTaskerNotifications(taskerId);
         return new ResponseData(HttpStatus.OK.value(), "All tasker notifications cleared");
+    }
+
+    // =================== CHAT NOTIFICATION ENDPOINTS ===================
+    @Operation(summary = "Get unread chat message count for user")
+    @GetMapping("/users/{userId}/chat/unread-count")
+    public ResponseData<Map<String, Object>> getUserChatUnreadCount(@PathVariable Long userId) {
+        Map<String, Object> result = notificationService.getUserChatUnreadCount(userId);
+        return new ResponseData(HttpStatus.OK.value(), "Chat unread count retrieved",
+                result);
+    }
+
+    @Operation(summary = "Get unread chat message count for tasker")
+    @GetMapping("/taskers/{taskerId}/chat/unread-count")
+    public ResponseData<Map<String, Object>> getTaskerChatUnreadCount(@PathVariable Long taskerId) {
+        Map<String, Object> result = notificationService.getTaskerChatUnreadCount(taskerId);
+        return new ResponseData(HttpStatus.OK.value(), "Chat unread count retrieved",
+                result);
     }
 }

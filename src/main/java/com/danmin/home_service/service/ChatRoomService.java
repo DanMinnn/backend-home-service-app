@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.danmin.home_service.common.SenderType;
 import com.danmin.home_service.dto.request.ChatMessageDTO;
@@ -68,13 +69,15 @@ public class ChatRoomService {
                 });
     }
 
+    @Transactional
     public List<ChatRoomDTO> getChatRoomForUser(Integer userId) {
-        List<ChatRoom> rooms = chatRoomRepository.findUserById(userId);
+        List<ChatRoom> rooms = chatRoomRepository.findRoomByUserId(userId);
         return mapToChatRoomDTOs(rooms, SenderType.tasker);
     }
 
+    @Transactional
     public List<ChatRoomDTO> getChatRoomForTasker(Integer taskerId) {
-        List<ChatRoom> rooms = chatRoomRepository.findTaskerById(taskerId);
+        List<ChatRoom> rooms = chatRoomRepository.findRoomByTaskerId(taskerId);
         return mapToChatRoomDTOs(rooms, SenderType.user);
     }
 
@@ -136,5 +139,10 @@ public class ChatRoomService {
             room.setLastMessageAt(LocalDateTime.now());
             chatRoomRepository.save(room);
         });
+    }
+
+    @Transactional
+    public void updateLastMessageTimeOptimized(Integer roomId) {
+        chatRoomRepository.updateLastMessageAt(roomId, LocalDateTime.now());
     }
 }

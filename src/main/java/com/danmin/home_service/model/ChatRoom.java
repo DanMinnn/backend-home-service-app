@@ -14,15 +14,15 @@ import lombok.*;
 @Table(name = "chat_rooms")
 public class ChatRoom extends AbstractEntityCreatedAt<Integer> {
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id")
     private Bookings booking;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tasker_id")
     private Tasker tasker;
 

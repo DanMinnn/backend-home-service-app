@@ -6,10 +6,10 @@ import com.danmin.home_service.common.SenderType;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Getter
+@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,4 +22,5 @@ public class ChatMessageDTO {
     private LocalDateTime sentAt;
     private String senderName;
     private String senderImage;
+    private boolean read;
 }
