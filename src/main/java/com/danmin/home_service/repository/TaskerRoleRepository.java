@@ -13,4 +13,11 @@ import com.danmin.home_service.model.TaskerRole;
 public interface TaskerRoleRepository extends JpaRepository<TaskerRole, Integer> {
     @Query("SELECT tr.role FROM TaskerRole tr JOIN tr.tasker t WHERE t.email = :username")
     List<Role> findRolesByUsername(String username);
+
+    @Query("SELECT tr FROM TaskerRole tr " +
+            "JOIN FETCH tr.role r " +
+            "JOIN FETCH r.rolePermissions rp " +
+            "JOIN FETCH rp.permission " +
+            "JOIN tr.tasker t WHERE t.email = :username")
+    List<TaskerRole> findTaskerRolesWithPermissionsByUsername(String username);
 }

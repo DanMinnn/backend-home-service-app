@@ -42,7 +42,8 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public String generateAccessToken(long userId, String email, Collection<? extends GrantedAuthority> authorities) {
-        log.info("Generating access token for userId: {} with authorities: {}", userId, authorities);
+        // log.info("Generating access token for userId: {} with authorities: {}",
+        // userId, authorities);
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
@@ -53,7 +54,8 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public String generateRefreshToken(long userId, String email, Collection<? extends GrantedAuthority> authorities) {
-        log.info("Generating refresh token for userId: {} with authorities: {}", userId, authorities);
+        // log.info("Generating refresh token for userId: {} with authorities: {}",
+        // userId, authorities);
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
@@ -69,13 +71,29 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public String extractEmail(String token, TokenType tokenType) {
-        log.info("Extracting email from token: {} of type: {}", token, tokenType);
+        // log.info("Extracting email from token: {} of type: {}",token, tokenType);
 
         return extractClaim(token, Claims::getSubject, tokenType);
     }
 
+    @Override
+    public Integer extractUserId(String token, TokenType tokenType) {
+        // log.info("Extracting userId from token: {} of type: {}",token, tokenType);
+
+        return extractClaim(token, claims -> {
+            Object userIdObj = claims.get("userId");
+            if (userIdObj instanceof Integer) {
+                return (Integer) userIdObj;
+            } else if (userIdObj instanceof Number) {
+                return ((Number) userIdObj).intValue();
+            } else {
+                return Integer.valueOf(userIdObj.toString());
+            }
+        }, tokenType);
+    }
+
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver, TokenType tokenType) {
-        log.info("Extracting claim from token: {} of type: {}", token, tokenType);
+        // log.info("Extracting claim from token: {} of type: {}", token, tokenType);
 
         final Claims claims = extractAllClaims(token, tokenType);
         return claimsResolver.apply(claims);
@@ -92,31 +110,32 @@ public class JwtServiceImpl implements JwtService {
     }
 
     private String generateAccessToken(Map<String, Object> claims, String email) {
-        log.info("Generate access token for user {} with email", email, claims);
+        // log.info("Generate access token for user {} with email", email, claims);
 
         return Jwts.builder()
                 .claims(claims)
                 .subject(email)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * expiredTime)) // 10 minutes
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 1 day
                 .signWith(getKey(TokenType.ACCESS_TOKEN), SignatureAlgorithm.HS256)
                 .compact();
     }
 
     private String generateRefreshToken(Map<String, Object> claims, String email) {
-        log.info("Generate refresh token for user {} with email", email, claims);
+        // log.info("Generate refresh token for user {} with email", email, claims);
 
         return Jwts.builder()
                 .claims(claims)
                 .subject(email)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * expiredTime)) // 10 hours
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * expiredTime)) // 10 days
                 .signWith(getKey(TokenType.REFRESH_TOKEN), SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public String generateResetToken(Map<String, Object> claims, UserDetails user) {
-        log.info("Generate reset token for user {} with email", user.getUsername(), claims);
+        // log.info("Generate reset token for user {} with email", user.getUsername(),
+        // claims);
 
         return Jwts.builder()
                 .claims(claims)

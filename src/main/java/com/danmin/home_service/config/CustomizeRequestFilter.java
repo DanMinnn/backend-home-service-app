@@ -57,8 +57,8 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
         // if not in endpoint public, check authentication by token
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            // sendUnauthorizedResponse(response, "No valid authorization token found");
-            filterChain.doFilter(request, response);
+            sendUnauthorizedResponse(response, "No valid authorization token found");
+            // filterChain.doFilter(request, response);
             return;
         }
 
@@ -77,11 +77,18 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
 
         UserDetails userDetails = userDetailService.loadUserByUsername(email);
 
+        // Extract userId from token
+        Integer userId = jwtService.extractUserId(token, TokenType.ACCESS_TOKEN);
+
         // authentication
         SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.getAuthorities());
         authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+        // Create custom details with userId
+        CustomWebAuthenticationDetails customDetails = new CustomWebAuthenticationDetails(request, userId);
+        authenticationToken.setDetails(customDetails);
         securityContext.setAuthentication(authenticationToken);
         SecurityContextHolder.setContext(securityContext);
 
@@ -92,44 +99,10 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
-
-        // String authHeader = request.getHeader("Authorization");
-        // if (authHeader != null && authHeader.startsWith("Bearer ")) {
-        // authHeader = authHeader.substring(7);
-        // log.info("Token: {}", authHeader.substring(0, 20));
-
-        // String email = "";
-        // try {
-        // email = jwtService.extractEmail(authHeader, TokenType.ACCESS_TOKEN);
-        // log.info("email: {}", email);
-        // } catch (AccessDeniedException e) {
-        // log.error("Access denied: {}", e.getMessage());
-        // response.setStatus(HttpServletResponse.SC_OK);
-        // response.setContentType("application/json");
-        // response.setCharacterEncoding("UTF-8");
-        // response.getWriter().write(errorResponse(e.getMessage()));
-        // return;
-        // }
-
-        // UserDetails userDetails = userDetailService.loadUserByUsername(email);
-
-        // SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
-        // UsernamePasswordAuthenticationToken authenticationToken = new
-        // UsernamePasswordAuthenticationToken(
-        // userDetails, null, userDetails.getAuthorities());
-        // authenticationToken.setDetails(new
-        // WebAuthenticationDetailsSource().buildDetails(request));
-        // securityContext.setAuthentication(authenticationToken);
-        // SecurityContextHolder.setContext(securityContext);
-        // filterChain.doFilter(request, response);
-        // return;
-        // }
-
-        // filterChain.doFilter(request, response);
     }
 
     private boolean isPublicEndpoint(String uri) {
-        // Danh sách các endpoint công khai không yêu cầu xác thực
+        // List endpoint public
         return uri.startsWith("/auth/") ||
                 uri.startsWith("/register/") ||
                 uri.startsWith("/public/") ||
@@ -168,7 +141,7 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
         }
 
         // if don't have permission in authorites, will get from db
-        return permissionService.checkUserHasPermission(
+        return permissionService.checkPermissionUser(
                 userDetails.getUsername(), method, uri);
     }
 
@@ -207,21 +180,6 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
         return String.format("{\"success\":false,\"message\":\"%s\"}", message);
     }
 
-    // private String errorResponse(String message) {
-    // try {
-    // ErrorResponse errorResponse = new ErrorResponse();
-    // errorResponse.setTimeStamp(new Date());
-    // errorResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
-    // errorResponse.setError("Access Denied");
-    // errorResponse.setMessage(message);
-
-    // Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    // return gson.toJson(errorResponse);
-    // } catch (Exception e) {
-    // return "Error: " + e.getMessage();
-    // }
-    // }
-
     @Getter
     @Setter
     private class ErrorResponse {
@@ -229,6 +187,31 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
         private int status;
         private String error;
         private String message;
+    }
+
+    // Add custom authentication details class
+    public static class CustomWebAuthenticationDetails extends WebAuthenticationDetailsSource {
+        private final Integer userId;
+        private final String remoteAddress;
+        private final String sessionId;
+
+        public CustomWebAuthenticationDetails(HttpServletRequest request, Integer userId) {
+            this.userId = userId;
+            this.remoteAddress = request.getRemoteAddr();
+            this.sessionId = request.getRequestedSessionId();
+        }
+
+        public Integer getUserId() {
+            return userId;
+        }
+
+        public String getRemoteAddress() {
+            return remoteAddress;
+        }
+
+        public String getSessionId() {
+            return sessionId;
+        }
     }
 
 }

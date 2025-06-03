@@ -16,6 +16,8 @@ public interface TaskerRepository extends JpaRepository<Tasker, Long> {
 
   Optional<Tasker> findByEmail(String email);
 
+  Tasker findTaskerByEmail(String email);
+
   @Query(value = """
           SELECT t.id,
                  ST_DistanceSphere(t.earth_location, ST_MakePoint(:lng, :lat)) / 1000 as distance_km
