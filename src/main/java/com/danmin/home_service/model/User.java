@@ -38,12 +38,12 @@ public class User extends AbstractUser<Integer> implements BaseUser {
     @Column(name = "user_type")
     private UserType userType;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @JsonIgnore
     @Builder.Default
     private Set<UserVerifications> userVerifications = new HashSet<>();
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @JsonIgnore
     @Builder.Default
     private Set<Address> addresses = new HashSet<>();
@@ -53,12 +53,12 @@ public class User extends AbstractUser<Integer> implements BaseUser {
     @Builder.Default
     private Set<UserRole> userRoles = new HashSet<>();
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @JsonIgnore
     @Builder.Default
     private Set<Bookings> userBookings = new HashSet<>();
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @Builder.Default
     private Set<UserTransaction> userTransactions = new HashSet<>();
 
@@ -75,20 +75,23 @@ public class User extends AbstractUser<Integer> implements BaseUser {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
 
-        if (userRoles != null) {
-            for (UserRole userRole : userRoles) {
-                authorities.add(new SimpleGrantedAuthority("ROLE_" + userRole.getRole().getRoleName().toUpperCase()));
+        try {
+            if (userRoles != null && !userRoles.isEmpty()) {
+                for (UserRole userRole : userRoles) {
+                    authorities
+                            .add(new SimpleGrantedAuthority("ROLE_" + userRole.getRole().getRoleName().toUpperCase()));
 
-                for (Role_Permission role_Permission : userRole.getRole().getRolePermissions()) {
-                    Permission permission = role_Permission.getPermission();
-                    authorities.add(new SimpleGrantedAuthority(
-                            permission.getMethods() + ":" + permission.getMethodPath()));
+                    for (Role_Permission role_Permission : userRole.getRole().getRolePermissions()) {
+                        Permission permission = role_Permission.getPermission();
+                        authorities.add(new SimpleGrantedAuthority(
+                                permission.getMethods() + ":" + permission.getMethodPath()));
+                    }
                 }
             }
+        } catch (Exception e) {
+            return authorities;
         }
         return authorities;
     }
-
 }

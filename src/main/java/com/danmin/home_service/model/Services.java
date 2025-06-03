@@ -36,7 +36,7 @@ public class Services extends AbstractEntity<Long> {
     @Builder.Default
     private Boolean isActive = true;
 
-    @OneToMany(mappedBy = "services", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "services", fetch = FetchType.LAZY)
     @Builder.Default
     private Set<ServicePackages> servicePackages = new HashSet<>();
 

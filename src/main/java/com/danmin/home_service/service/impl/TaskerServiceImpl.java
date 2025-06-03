@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.danmin.home_service.dto.request.AddressDTO;
 import com.danmin.home_service.dto.request.TaskerServiceDTO;
@@ -53,6 +54,7 @@ public class TaskerServiceImpl implements TaskerService {
         throw new UnsupportedOperationException("Unimplemented method 'saveAddress'");
     }
 
+    @Transactional
     @Override
     public TaskerResponse getProfileTasker(String email) {
 

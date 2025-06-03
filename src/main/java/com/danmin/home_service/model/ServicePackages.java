@@ -32,7 +32,7 @@ public class ServicePackages extends AbstractEntityNoDate<Long> {
     @Column(name = "base_price")
     private BigDecimal basePrice;
 
-    @OneToMany(mappedBy = "servicePackages", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "servicePackages", fetch = FetchType.LAZY)
     @Builder.Default
     private Set<PackageVariants> packageVariants = new HashSet<>();
 }

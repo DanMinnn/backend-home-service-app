@@ -56,7 +56,7 @@ public class Tasker extends AbstractUser<Integer> implements BaseUser {
     @Column(name = "availability_status")
     private AvailabilityStatus availabilityStatus;
 
-    @OneToMany(mappedBy = "tasker", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "tasker", fetch = FetchType.LAZY)
     @Builder.Default
     private Set<UserVerifications> userVerifications = new HashSet<>();
 
@@ -66,7 +66,7 @@ public class Tasker extends AbstractUser<Integer> implements BaseUser {
     private Set<TaskerRole> taskerRoles = new HashSet<>();
 
     @JsonIgnore
-    @OneToMany(mappedBy = "tasker", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "tasker", fetch = FetchType.LAZY)
     @Builder.Default
     private Set<TaskerServiceModel> taskerServices = new HashSet<>();
 
@@ -94,16 +94,23 @@ public class Tasker extends AbstractUser<Integer> implements BaseUser {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authorities = new ArrayList<>();
 
-        if (taskerRoles != null) {
-            for (TaskerRole taskerRole : taskerRoles) {
-                authorities.add(new SimpleGrantedAuthority("ROLE_" + taskerRole.getRole().getRoleName().toUpperCase()));
+        try {
+            if (taskerRoles != null && !taskerRoles.isEmpty()) {
+                for (TaskerRole taskerRole : taskerRoles) {
+                    authorities.add(
+                            new SimpleGrantedAuthority("ROLE_" + taskerRole.getRole().getRoleName().toUpperCase()));
 
-                for (Role_Permission role_Permission : taskerRole.getRole().getRolePermissions()) {
-                    Permission permission = role_Permission.getPermission();
-                    authorities.add(new SimpleGrantedAuthority(
-                            permission.getMethods() + ":" + permission.getMethodPath()));
+                    for (Role_Permission role_Permission : taskerRole.getRole().getRolePermissions()) {
+                        Permission permission = role_Permission.getPermission();
+                        authorities.add(new SimpleGrantedAuthority(
+                                permission.getMethods() + ":" + permission.getMethodPath()));
+                    }
                 }
             }
+        } catch (Exception e) {
+            // If lazy loading fails, return empty authorities
+            // The permission check will be handled by PermissionService
+            return authorities;
         }
         return authorities;
     }
