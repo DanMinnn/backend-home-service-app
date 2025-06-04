@@ -525,6 +525,7 @@ public class BookingServiceImpl implements BookingService {
                     BookingDetailResponse response = BookingDetailResponse.builder()
                             .bookingId(booking.getId())
                             .serviceId(booking.getService().getId())
+                            .userId(booking.getUser().getId())
                             .username(booking.getUser().getFirstLastName())
                             .phoneNumber(booking.getUser().getPhoneNumber())
                             .serviceName(booking.getService().getName())
@@ -544,6 +545,7 @@ public class BookingServiceImpl implements BookingService {
                             .build();
 
                     if (booking.getTasker() != null) {
+                        response.setTaskerId(booking.getTasker().getId());
                         response.setTaskerName(booking.getTasker().getFirstLastName());
                         response.setTaskerPhone(booking.getTasker().getPhoneNumber());
                     }

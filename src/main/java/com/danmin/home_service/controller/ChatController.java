@@ -75,15 +75,16 @@ public class ChatController {
                 return new ResponseData<List<ChatRoomDTO>>(HttpStatus.ACCEPTED.value(), "chat room", chatRooms);
         }
 
-        @Operation(summary = "Get chat room")
-        @GetMapping("/room")
-        public ResponseData<ChatRoom> getChatRoom(@RequestParam Integer userId,
-                        @RequestParam Integer taskerId,
-                        @RequestParam(required = false) Long bookingId) {
+        // @Operation(summary = "Get chat room")
+        // @GetMapping("/room")
+        // public ResponseData<ChatRoom> getChatRoom(@RequestParam Integer userId,
+        // @RequestParam Integer taskerId,
+        // @RequestParam(required = false) Long bookingId) {
 
-                return new ResponseData<ChatRoom>(HttpStatus.ACCEPTED.value(), "chat room",
-                                chatRoomService.getChatRoom(userId, taskerId, bookingId != null ? bookingId : 0));
-        }
+        // return new ResponseData<ChatRoom>(HttpStatus.ACCEPTED.value(), "chat room",
+        // chatRoomService.getChatRoom(userId, taskerId, bookingId != null ? bookingId :
+        // 0));
+        // }
 
         @Operation(summary = "Get message chat room")
         @GetMapping("/message/{roomId}")
@@ -152,36 +153,15 @@ public class ChatController {
                                 chatMessageService.getRecentMessages(roomId, limit));
         }
 
-        @PostMapping("/rooms")
-        public ResponseData<ChatRoomDTO> createChatRoom(
-                        @RequestBody ChatRoomDTO request,
-                        Authentication authentication) {
+        @PostMapping("/rooms/create")
+        public ResponseData<ChatRoomDTO> createChatRoom(@RequestBody ChatRoomDTO request) {
+                try {
 
-                Integer userId;
-                if (authentication.getDetails() instanceof CustomizeRequestFilter.CustomWebAuthenticationDetails) {
-                        CustomizeRequestFilter.CustomWebAuthenticationDetails details = (CustomizeRequestFilter.CustomWebAuthenticationDetails) authentication
-                                        .getDetails();
-                        userId = details.getUserId();
-                } else {
-                        // Fallback to extract from principal if details don't contain userId
-                        userId = Integer.parseInt(
-                                        ((Map<String, Object>) authentication.getDetails()).get("userId").toString());
+                        return new ResponseData(HttpStatus.CREATED.value(), "Created chat room successfully",
+                                        chatRoomService.createChatRoom(request));
+                } catch (Exception e) {
+                        return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
                 }
-                // Kiểm tra role
-                boolean isUser = authentication.getAuthorities().stream()
-                                .anyMatch(a -> a.getAuthority().equals("ROLE_USER"));
-                boolean isTasker = authentication.getAuthorities().stream()
-                                .anyMatch(a -> a.getAuthority().equals("ROLE_TASKER"));
-
-                Integer userIdForRoom = isUser ? userId : request.getUserId();
-                Integer taskerIdForRoom = isTasker ? userId : request.getTaskerId();
-
-                // ChatRoom chatRoom = chatRoomService.getChatRoom(userIdForRoom,
-                // taskerIdForRoom, request.getBookingId());
-
-                chatRoomService.createChatRoom(request, userIdForRoom, taskerIdForRoom);
-
-                return new ResponseData<>(HttpStatus.ACCEPTED.value(), "create chat room");
         }
 
         @Operation(summary = "Mark messages as read")

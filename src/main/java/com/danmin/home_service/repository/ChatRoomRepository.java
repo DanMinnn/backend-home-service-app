@@ -15,7 +15,12 @@ import com.danmin.home_service.model.ChatRoom;
 @Repository
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Integer> {
 
-    Optional<ChatRoom> findByUserIdAndTaskerIdAndBookingId(Integer userId, Integer taskerId, Long bookingId);
+    @Query("SELECT c FROM ChatRoom c " +
+            "JOIN FETCH c.user " +
+            "JOIN FETCH c.tasker " +
+            "JOIN FETCH c.booking " +
+            "WHERE c.user.id = :userId AND c.tasker.id = :taskerId")
+    Optional<ChatRoom> findByUserIdAndTaskerId(@Param("userId") Integer userId, @Param("taskerId") Integer taskerId);
 
     List<ChatRoom> findRoomByUserId(Integer userId);
 

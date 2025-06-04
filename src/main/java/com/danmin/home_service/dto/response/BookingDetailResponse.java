@@ -18,6 +18,8 @@ public class BookingDetailResponse implements Serializable {
 
     private Long bookingId;
     private Long serviceId;
+    private Integer userId;
+    private Integer taskerId;
     private LocalDateTime scheduledStart;
     private LocalDateTime scheduledEnd;
     private Integer duration;
