@@ -68,8 +68,8 @@ public class NotificationService {
                 userNotificationRepository.save(notification);
         }
 
-        public void clearUserNotifications(Long userId) {
-                userNotificationRepository.deleteByUserId(userId);
+        public void deletedUserNotifications(Long notificationId) {
+                userNotificationRepository.deleteById(notificationId);
         }
 
         // =================== TASKER NOTIFICATION METHODS ===================
@@ -100,8 +100,8 @@ public class NotificationService {
                 taskerNotificationRepository.save(notification);
         }
 
-        public void clearTaskerNotifications(Long taskerId) {
-                taskerNotificationRepository.deleteByTaskerId(taskerId);
+        public void clearTaskerNotifications(Long notificationId) {
+                taskerNotificationRepository.deleteById(notificationId);
         }
 
         // =================== BUSINESS LOGIC METHODS ===================

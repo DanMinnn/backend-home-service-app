@@ -64,11 +64,11 @@ public class NotificationController {
         return new ResponseData(HttpStatus.OK.value(), "Notification marked as read");
     }
 
-    @Operation(summary = "Clear all user notifications")
-    @DeleteMapping("/users/{userId}")
-    public ResponseData<?> clearUserNotifications(@PathVariable Long userId) {
-        notificationService.clearUserNotifications(userId);
-        return new ResponseData(HttpStatus.OK.value(), "All user notifications cleared");
+    @Operation(summary = "Delete user notifications")
+    @DeleteMapping("/delete/{notificationId}")
+    public ResponseData<?> clearUserNotifications(@PathVariable Long notificationId) {
+        notificationService.deletedUserNotifications(notificationId);
+        return new ResponseData(HttpStatus.OK.value(), "Deleted user notifications");
     }
 
     // =================== TASKER ENDPOINTS ===================
@@ -93,11 +93,11 @@ public class NotificationController {
         return new ResponseData(HttpStatus.OK.value(), "Notification marked as read");
     }
 
-    @Operation(summary = "Clear all tasker notifications")
-    @DeleteMapping("/taskers/{taskerId}")
-    public ResponseData<?> clearTaskerNotifications(@PathVariable Long taskerId) {
-        notificationService.clearTaskerNotifications(taskerId);
-        return new ResponseData(HttpStatus.OK.value(), "All tasker notifications cleared");
+    @Operation(summary = "Delete tasker notifications")
+    @DeleteMapping("/delete/{notificationId}")
+    public ResponseData<?> clearTaskerNotifications(@PathVariable Long notificationId) {
+        notificationService.clearTaskerNotifications(notificationId);
+        return new ResponseData(HttpStatus.OK.value(), "Deleteted tasker notifications");
     }
 
     // =================== CHAT NOTIFICATION ENDPOINTS ===================
