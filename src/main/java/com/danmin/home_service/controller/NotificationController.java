@@ -65,7 +65,7 @@ public class NotificationController {
     }
 
     @Operation(summary = "Delete user notifications")
-    @DeleteMapping("/delete/{notificationId}")
+    @DeleteMapping("/user/delete/{notificationId}")
     public ResponseData<?> clearUserNotifications(@PathVariable Long notificationId) {
         notificationService.deletedUserNotifications(notificationId);
         return new ResponseData(HttpStatus.OK.value(), "Deleted user notifications");
@@ -94,7 +94,7 @@ public class NotificationController {
     }
 
     @Operation(summary = "Delete tasker notifications")
-    @DeleteMapping("/delete/{notificationId}")
+    @DeleteMapping("/tasker/delete/{notificationId}")
     public ResponseData<?> clearTaskerNotifications(@PathVariable Long notificationId) {
         notificationService.clearTaskerNotifications(notificationId);
         return new ResponseData(HttpStatus.OK.value(), "Deleteted tasker notifications");
