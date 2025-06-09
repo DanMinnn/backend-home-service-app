@@ -316,13 +316,13 @@ public class BookingServiceImpl implements BookingService {
     private int getStatusPriority(BookingStatus status) {
         switch (status) {
             case pending:
-                return 0; // Pending bookings shown first
+                return 0; // Pending
             case assigned:
-                return 1; // Assigned bookings shown second
+                return 1; // Assigned
             case completed:
-                return 2; // Completed bookings shown third
+                return 2; // Completed
             case cancelled:
-                return 3; // Cancelled bookings shown last
+                return 3; // Cancelled
             default:
                 return 4; // Any other status
         }
@@ -541,6 +541,7 @@ public class BookingServiceImpl implements BookingService {
                             .paymentStatus(booking.getPaymentStatus())
                             .latitude(booking.getLatitude())
                             .longitude(booking.getLongitude())
+                            .completedAt(booking.getCompletedAt())
                             .notes(booking.getNotes())
                             .build();
 
@@ -548,6 +549,7 @@ public class BookingServiceImpl implements BookingService {
                         response.setTaskerId(booking.getTasker().getId());
                         response.setTaskerName(booking.getTasker().getFirstLastName());
                         response.setTaskerPhone(booking.getTasker().getPhoneNumber());
+                        response.setTaskerImage(booking.getTasker().getProfileImage());
                     }
                     return response;
                 })
