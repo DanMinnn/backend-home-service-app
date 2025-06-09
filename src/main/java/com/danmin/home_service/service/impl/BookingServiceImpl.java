@@ -38,12 +38,12 @@ import com.danmin.home_service.repository.PaymentRepository;
 import com.danmin.home_service.repository.ReviewRepository;
 import com.danmin.home_service.repository.ServicePackageRepository;
 import com.danmin.home_service.repository.ServiceRepository;
+import com.danmin.home_service.repository.TaskerNotificationRepository;
 import com.danmin.home_service.repository.TaskerRepository;
 import com.danmin.home_service.repository.UserRepository;
 import com.danmin.home_service.service.BookingService;
 import com.danmin.home_service.service.NotificationService;
 import com.danmin.home_service.service.PaymentService;
-import com.danmin.home_service.service.ReputationService;
 import com.danmin.home_service.service.TaskerWalletService;
 import com.danmin.home_service.service.UserWalletService;
 import com.danmin.home_service.service.UserTypeService;
@@ -64,6 +64,7 @@ public class BookingServiceImpl implements BookingService {
     private final TaskerRepository taskerRepository;
     private final ReviewRepository reviewRepository;
     private final UserTypeService userTypeService;
+    private final TaskerNotificationRepository taskerNotificationRepository;
 
     private final TaskerWalletService taskerWalletService;
     private final UserWalletService userWalletService;
@@ -72,11 +73,6 @@ public class BookingServiceImpl implements BookingService {
 
     private final ServicePackageRepository servicePackageRepository;
     private final NotificationService notificationService;
-
-    private final ReputationService reputationService;
-    private static final double EPSILON = 0.2; // 20% exploration rate
-    // private static final BigDecimal MIN_REPUTATION_FOR_TASK = new
-    // BigDecimal("1.5");
 
     // =================== CREATE BOOKING METHODS ===================
     @Transactional(rollbackOn = Exception.class)
@@ -405,28 +401,24 @@ public class BookingServiceImpl implements BookingService {
     public PageResponse<?> getTaskForTasker(int pageNo, int pageSize, Long taskerId, List<Long> serviceIds) {
         try {
             List<Bookings> bookingWithService = bookingRepository.getTaskForTasker(serviceIds);
-
             LocalDateTime now = LocalDateTime.now();
 
-            boolean showAllTasks = false;
-            boolean isTopPerformer = false;
+            List<Bookings> availableTasks;
 
-            if (NotificationService.randomVal < EPSILON) {
-                showAllTasks = true;
-                log.info("Using exploration strategy for tasker {}: showing all available tasks", taskerId);
-                log.info("randomVal {}:", NotificationService.randomVal);
-            } else if (taskerId != null) {
-                isTopPerformer = reputationService.isTopPerformer(taskerId);
-                showAllTasks = isTopPerformer;
+            if (taskerId != null) {
+                List<Long> notifiedBookingIds = taskerNotificationRepository.findNotifiedBookingIdsByTaskerId(taskerId);
 
-                if (isTopPerformer) {
-                    log.info("Tasker {} is among top performers: showing all tasks", taskerId);
-                } else {
-                    log.info("Tasker {} is not among top performers: showing limited tasks", taskerId);
-                }
+                availableTasks = bookingWithService.stream()
+                        .filter(booking -> notifiedBookingIds.contains(booking.getId()))
+                        .collect(Collectors.toList());
+
+                log.info("Tasker {} has been notified about {} tasks", taskerId, availableTasks.size());
+            } else {
+                throw new ResourceNotFoundException("Tasker not found!");
             }
 
-            List<Bookings> futureBookings = bookingWithService.stream()
+            // Filter for future bookings and sort by scheduled start
+            List<Bookings> futureBookings = availableTasks.stream()
                     .filter(booking -> {
                         LocalDateTime scheduledStart = booking.getScheduledStart();
                         return scheduledStart != null && (scheduledStart.isAfter(now) || scheduledStart.isEqual(now));
@@ -443,13 +435,6 @@ public class BookingServiceImpl implements BookingService {
                         return date1.compareTo(date2);
                     })
                     .collect(Collectors.toList());
-
-            if (!showAllTasks && taskerId != null) {
-                int halfSize = futureBookings.size() / 2;
-                if (halfSize > 0) {
-                    futureBookings = futureBookings.subList(0, halfSize);
-                }
-            }
 
             int start = pageNo > 0 ? (pageNo - 1) * pageSize : 0;
             int end = Math.min(start + pageSize, futureBookings.size());

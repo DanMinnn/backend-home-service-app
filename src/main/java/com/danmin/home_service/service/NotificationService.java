@@ -127,7 +127,7 @@ public class NotificationService {
                 } else {
                         log.info("Using exploitation strategy (high-reputation taskers) for booking {}", bookingId);
                         taskersToNotify = taskerRepository.findAvailableTaskersByReputationAndService(
-                                        bookingServiceId, DEFAULT_NOTIFICATION_LIMIT);
+                                        bookingServiceId, 5);
                 }
 
                 List<TaskerNotification> notifications = new ArrayList<>();
