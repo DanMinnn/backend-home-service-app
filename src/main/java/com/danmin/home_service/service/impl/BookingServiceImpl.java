@@ -43,6 +43,7 @@ import com.danmin.home_service.repository.UserRepository;
 import com.danmin.home_service.service.BookingService;
 import com.danmin.home_service.service.NotificationService;
 import com.danmin.home_service.service.PaymentService;
+import com.danmin.home_service.service.ReputationService;
 import com.danmin.home_service.service.TaskerWalletService;
 import com.danmin.home_service.service.UserWalletService;
 import com.danmin.home_service.service.UserTypeService;
@@ -71,6 +72,11 @@ public class BookingServiceImpl implements BookingService {
 
     private final ServicePackageRepository servicePackageRepository;
     private final NotificationService notificationService;
+
+    private final ReputationService reputationService;
+    private static final double EPSILON = 0.2; // 20% exploration rate
+    // private static final BigDecimal MIN_REPUTATION_FOR_TASK = new
+    // BigDecimal("1.5");
 
     // =================== CREATE BOOKING METHODS ===================
     @Transactional(rollbackOn = Exception.class)
@@ -396,23 +402,36 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public PageResponse<?> getTaskForTasker(int pageNo, int pageSize, List<Long> serviceIds) {
+    public PageResponse<?> getTaskForTasker(int pageNo, int pageSize, Long taskerId, List<Long> serviceIds) {
         try {
-            // Fetch bookings for the tasker with the specified services
-            List<Bookings> filteredBookings = bookingRepository.getTaskForTasker(serviceIds);
+            List<Bookings> bookingWithService = bookingRepository.getTaskForTasker(serviceIds);
 
-            // Current date and time for comparison
             LocalDateTime now = LocalDateTime.now();
 
-            // Filter for future bookings and sort by proximity
-            List<Bookings> futureBookings = filteredBookings.stream()
+            boolean showAllTasks = false;
+            boolean isTopPerformer = false;
+
+            if (NotificationService.randomVal < EPSILON) {
+                showAllTasks = true;
+                log.info("Using exploration strategy for tasker {}: showing all available tasks", taskerId);
+                log.info("randomVal {}:", NotificationService.randomVal);
+            } else if (taskerId != null) {
+                isTopPerformer = reputationService.isTopPerformer(taskerId);
+                showAllTasks = isTopPerformer;
+
+                if (isTopPerformer) {
+                    log.info("Tasker {} is among top performers: showing all tasks", taskerId);
+                } else {
+                    log.info("Tasker {} is not among top performers: showing limited tasks", taskerId);
+                }
+            }
+
+            List<Bookings> futureBookings = bookingWithService.stream()
                     .filter(booking -> {
                         LocalDateTime scheduledStart = booking.getScheduledStart();
-                        // Include bookings scheduled now or in the future
                         return scheduledStart != null && (scheduledStart.isAfter(now) || scheduledStart.isEqual(now));
                     })
                     .sorted((b1, b2) -> {
-                        // Sort by proximity - nearest scheduled date first
                         LocalDateTime date1 = b1.getScheduledStart();
                         LocalDateTime date2 = b2.getScheduledStart();
 
@@ -425,7 +444,13 @@ public class BookingServiceImpl implements BookingService {
                     })
                     .collect(Collectors.toList());
 
-            // Create pageable results
+            if (!showAllTasks && taskerId != null) {
+                int halfSize = futureBookings.size() / 2;
+                if (halfSize > 0) {
+                    futureBookings = futureBookings.subList(0, halfSize);
+                }
+            }
+
             int start = pageNo > 0 ? (pageNo - 1) * pageSize : 0;
             int end = Math.min(start + pageSize, futureBookings.size());
 
@@ -439,7 +464,6 @@ public class BookingServiceImpl implements BookingService {
 
             List<Bookings> pagedBookings = futureBookings.subList(start, end);
 
-            // Map to DTOs
             List<BookingDetailResponse> bookingDetails = bookingDetailResponses(pagedBookings);
 
             return PageResponse.builder()

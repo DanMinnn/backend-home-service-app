@@ -184,14 +184,15 @@ public class BookingController {
     }
 
     @Operation(summary = "Get all task with service correspond for tasker")
-    @GetMapping("/all-task-for-tasker")
+    @GetMapping("/all-task-for-tasker/{taskerId}")
     public ResponseData<?> getAllTaskForTasker(@RequestParam(defaultValue = "0", required = false) int pageNo,
             @RequestParam(defaultValue = "10", required = false) int pageSize,
-            @RequestParam(name = "serviceIds") List<Long> serviceIds) {
+            @RequestParam(name = "serviceIds") List<Long> serviceIds,
+            @PathVariable(value = "taskerId") Long taskerId) {
 
         try {
             return new ResponseData(HttpStatus.OK.value(), "All tasks for tasker",
-                    bookingService.getTaskForTasker(pageNo, pageSize, serviceIds));
+                    bookingService.getTaskForTasker(pageNo, pageSize, taskerId, serviceIds));
         } catch (ResourceNotFoundException e) {
             log.error("errorMessage={}", e.getMessage(), e.getCause());
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());

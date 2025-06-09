@@ -49,4 +49,30 @@ public interface TaskerRepository extends JpaRepository<Tasker, Long> {
       @Param("serviceId") Long serviceId,
       @Param("limit") int limit);
 
+  @Query(value = """
+          SELECT t.*
+          FROM tasker t
+          JOIN tasker_services ts ON t.id = ts.tasker_id
+          LEFT JOIN tasker_reputation tr ON t.id = tr.tasker_id
+          WHERE t.availability_status = 'available'
+            AND ts.service_id = :serviceId
+          ORDER BY COALESCE(tr.reputation_score, 3.0) DESC
+          LIMIT :limit
+      """, nativeQuery = true)
+  List<Tasker> findAvailableTaskersByReputationAndService(
+      @Param("serviceId") Long serviceId,
+      @Param("limit") int limit);
+
+  @Query(value = """
+          SELECT t.*
+          FROM tasker t
+          JOIN tasker_services ts ON t.id = ts.tasker_id
+          WHERE t.availability_status = 'available'
+            AND ts.service_id = :serviceId
+          ORDER BY RANDOM()
+          LIMIT :limit
+      """, nativeQuery = true)
+  List<Tasker> findRandomAvailableTaskers(
+      @Param("serviceId") Long serviceId,
+      @Param("limit") int limit);
 }

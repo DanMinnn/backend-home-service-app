@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -38,6 +39,12 @@ public class NotificationService {
         private final FirebaseNotificationService firebaseNotificationService;
         private final ChatRoomService chatRoomService;
         private final ChatMessageService chatMessageService;
+        private final Random random = new Random();
+
+        // Epsilon value for epsilon-greedy algorithm (probability of exploration)
+        private static final double EPSILON = 0.2; // 20% chance of random selection
+        private static final int DEFAULT_NOTIFICATION_LIMIT = 10;
+        public static double randomVal;
 
         // =================== USER NOTIFICATION METHODS ===================
         public List<UserNotificationResponse> getUserNotifications(Long userId) {
@@ -110,11 +117,22 @@ public class NotificationService {
                                 .orElseThrow(() -> new EntityNotFoundException("Booking not found"));
 
                 Long bookingServiceId = booking.getService().getId();
-                List<Tasker> taskersAvailable = taskerRepository.findAvailableTaskers(bookingServiceId, 10);
+                List<Tasker> taskersToNotify = new ArrayList<>();
+
+                randomVal = random.nextDouble();
+                if (randomVal < EPSILON) {
+                        log.info("Using exploration strategy (random taskers) for booking {}", bookingId);
+                        taskersToNotify = taskerRepository.findRandomAvailableTaskers(bookingServiceId,
+                                        DEFAULT_NOTIFICATION_LIMIT);
+                } else {
+                        log.info("Using exploitation strategy (high-reputation taskers) for booking {}", bookingId);
+                        taskersToNotify = taskerRepository.findAvailableTaskersByReputationAndService(
+                                        bookingServiceId, DEFAULT_NOTIFICATION_LIMIT);
+                }
 
                 List<TaskerNotification> notifications = new ArrayList<>();
 
-                for (Tasker tasker : taskersAvailable) {
+                for (Tasker tasker : taskersToNotify) {
 
                         // Create notification record
                         TaskerNotification notification = TaskerNotification.builder()

@@ -20,7 +20,7 @@ public interface BookingService {
 
     PageResponse<?> getBookingFilteringStatus(int pageNo, int pageSize, Integer userId, String status);
 
-    PageResponse<?> getTaskForTasker(int pageNo, int pageSize, List<Long> serviceIds);
+    PageResponse<?> getTaskForTasker(int pageNo, int pageSize, Long taskerId, List<Long> serviceIds);
 
     PageResponse<?> getTaskAssignByTaskerFollowDateTime(int pageNo, int pageSize, Long taskerId, String selectedDate);
 
