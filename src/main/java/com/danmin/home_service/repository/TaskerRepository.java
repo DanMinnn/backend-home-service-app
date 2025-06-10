@@ -84,4 +84,7 @@ public interface TaskerRepository extends JpaRepository<Tasker, Long> {
       "WHERE t.availabilityStatus = 'available' " +
       "AND ts.service.id = :serviceId")
   List<Tasker> findAvailableTaskersByService(@Param("serviceId") Long serviceId);
+
+  @Query(value = "SELECT t FROM Tasker t JOIN Bookings b ON b.tasker.id = t.id WHERE t.availabilityStatus = 'available' AND b.bookingStatus = 'assigned' AND b.id = :bookingId")
+  Tasker findTaskerByBookingId(@Param("bookingId") Long bookingId);
 }
