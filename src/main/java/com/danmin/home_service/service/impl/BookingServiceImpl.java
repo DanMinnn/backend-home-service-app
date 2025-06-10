@@ -172,7 +172,14 @@ public class BookingServiceImpl implements BookingService {
     @Transactional(rollbackOn = Exception.class)
     @Override
     public void assignTasker(long bookingId, long taskerId) {
-        Bookings booking = getBookingById(bookingId);
+        Bookings booking = bookingRepository.findByIdWithPessimisticLock(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + bookingId));
+
+        // prevent duplicate assignments
+        if (booking.getTasker() != null || !booking.getBookingStatus().equals(BookingStatus.pending)) {
+            throw new BusinessException("This task has already been assigned to another tasker");
+        }
+
         Tasker tasker = taskerRepository.findById(taskerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tasker not found with id: "
                         + taskerId));
