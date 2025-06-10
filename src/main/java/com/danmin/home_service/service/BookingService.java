@@ -24,6 +24,8 @@ public interface BookingService {
 
     PageResponse<?> getTaskAssignByTaskerFollowDateTime(int pageNo, int pageSize, Long taskerId, String selectedDate);
 
+    PageResponse<?> getHistoryTask(int pageNo, int pageSize, Integer taskerId);
+
     void cancelBookingByUser(long bookingId, String cancelReason);
 
     void cancelBookingByTasker(long bookingId, String cancelReason);

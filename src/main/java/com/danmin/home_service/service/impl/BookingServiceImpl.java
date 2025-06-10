@@ -556,6 +556,34 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
+    @Override
+    public PageResponse<?> getHistoryTask(int pageNo, int pageSize, Integer taskerId) {
+        List<Bookings> getHistoryTask = bookingRepository.findHistoryTask(taskerId);
+
+        int totalItems = getHistoryTask.size();
+        int start = Math.max(0, (pageNo - 1) * pageSize);
+        int end = Math.min(start + pageSize, totalItems);
+
+        if (start >= totalItems) {
+            return PageResponse.builder()
+                    .pageNo(pageNo)
+                    .pageSize(pageSize)
+                    .totalPage((int) Math.ceil((double) totalItems / pageSize))
+                    .items(List.of())
+                    .build();
+        }
+
+        List<Bookings> pagedBookings = getHistoryTask.subList(start, end);
+        List<BookingDetailResponse> bookingDetails = bookingDetailResponses(pagedBookings);
+
+        return PageResponse.builder()
+                .pageNo(pageNo)
+                .pageSize(pageSize)
+                .totalPage((int) Math.ceil((double) totalItems / pageSize))
+                .items(bookingDetails)
+                .build();
+    }
+
     public List<BookingDetailResponse> bookingDetailResponses(List<Bookings> pagedBookings) {
         return pagedBookings.stream()
                 .map(booking -> {

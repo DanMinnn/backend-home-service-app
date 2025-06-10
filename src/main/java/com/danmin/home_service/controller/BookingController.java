@@ -224,4 +224,24 @@ public class BookingController {
 
     }
 
+    @Operation(summary = "Gets history tasks")
+    @GetMapping("/{taskerId}/get-history-tasks")
+    public ResponseData<?> getHistoryTask(
+            @RequestParam(defaultValue = "0", required = false) int pageNo,
+            @RequestParam(defaultValue = "10", required = false) int pageSize,
+            @PathVariable(name = "taskerId") Integer taskerId) {
+
+        try {
+            return new ResponseData(HttpStatus.OK.value(), "All history tasks",
+                    bookingService.getHistoryTask(pageNo, pageSize, taskerId));
+        } catch (ResourceNotFoundException e) {
+            log.error("errorMessage={}", e.getMessage(), e.getCause());
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid status value: {}", e.getMessage());
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Invalid status value: " + e.getMessage());
+        }
+
+    }
+
 }

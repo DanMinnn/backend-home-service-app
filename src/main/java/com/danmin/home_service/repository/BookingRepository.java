@@ -84,4 +84,9 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
                         "WHERE b.bookingStatus = 'assigned' " +
                         "AND b.scheduledStart <= :now AND b.scheduledEnd > :now")
         List<Bookings> findAssignedBookingsInProgressWindow(@Param("now") LocalDateTime now);
+
+        @Query("SELECT b FROM Bookings b " +
+                        "WHERE b.tasker.id = :taskerId " +
+                        "AND b.bookingStatus = 'completed' OR b.bookingStatus = 'cancelled'")
+        List<Bookings> findHistoryTask(@Param("taskerId") Integer taskerId);
 }
