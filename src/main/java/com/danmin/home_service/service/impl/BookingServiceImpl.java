@@ -32,12 +32,14 @@ import com.danmin.home_service.model.Review;
 import com.danmin.home_service.model.ServicePackages;
 import com.danmin.home_service.model.Services;
 import com.danmin.home_service.model.Tasker;
+import com.danmin.home_service.model.TaskerExposureStats;
 import com.danmin.home_service.model.User;
 import com.danmin.home_service.repository.BookingRepository;
 import com.danmin.home_service.repository.PaymentRepository;
 import com.danmin.home_service.repository.ReviewRepository;
 import com.danmin.home_service.repository.ServicePackageRepository;
 import com.danmin.home_service.repository.ServiceRepository;
+import com.danmin.home_service.repository.TaskerExposureStatsRepository;
 import com.danmin.home_service.repository.TaskerNotificationRepository;
 import com.danmin.home_service.repository.TaskerRepository;
 import com.danmin.home_service.repository.UserRepository;
@@ -73,6 +75,8 @@ public class BookingServiceImpl implements BookingService {
 
     private final ServicePackageRepository servicePackageRepository;
     private final NotificationService notificationService;
+
+    private final TaskerExposureStatsRepository taskerExposureStatsRepository;
 
     // =================== CREATE BOOKING METHODS ===================
     @Transactional(rollbackOn = Exception.class)
@@ -236,8 +240,25 @@ public class BookingServiceImpl implements BookingService {
             taskerRepository.save(tasker);
             bookingRepository.save(booking);
 
+            // Update tasker exposure stats
+            updateTaskerExposureStats(taskerId);
+
             notificationService.notifyJobAccepted(bookingId, taskerId);
         }
+    }
+
+    private void updateTaskerExposureStats(long taskerId) {
+        TaskerExposureStats stats = taskerExposureStatsRepository
+                .findByTaskerId(taskerId)
+                .orElseGet(() -> TaskerExposureStats.builder()
+                        .taskerId(taskerId)
+                        .notificationCount(0L)
+                        .assignedJobCount(0L)
+                        .build());
+
+        stats.setAssignedJobCount(stats.getAssignedJobCount() + 1);
+        stats.setLastJobDate(LocalDateTime.now());
+        taskerExposureStatsRepository.save(stats);
     }
 
     // =================== GET BOOKING - GET TASK METHODS ===================

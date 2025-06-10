@@ -75,4 +75,13 @@ public interface TaskerRepository extends JpaRepository<Tasker, Long> {
   List<Tasker> findRandomAvailableTaskers(
       @Param("serviceId") Long serviceId,
       @Param("limit") int limit);
+
+  /**
+   * Purpose is use to NotificationService class
+   */
+  @Query(value = "SELECT t FROM Tasker t " +
+      "JOIN t.taskerServices ts " +
+      "WHERE t.availabilityStatus = 'available' " +
+      "AND ts.service.id = :serviceId")
+  List<Tasker> findAvailableTaskersByService(@Param("serviceId") Long serviceId);
 }
