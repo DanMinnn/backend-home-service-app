@@ -63,6 +63,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         var user = userTypeService.findByEmail(request.getEmail())
                 .orElseThrow(() -> new AccessDeniedException("User not found with username: " + request.getEmail()));
 
+        if ("CLIENT".equalsIgnoreCase(request.getPlatform()) && !(user instanceof User)) {
+            throw new InvalidDataException("INVALID_USER_TYPE_FOR_CLIENT_APP");
+        } else if ("TASKER".equalsIgnoreCase(request.getPlatform()) && !(user instanceof Tasker)) {
+            throw new InvalidDataException("INVALID_USER_TYPE_FOR_TASKER_APP");
+        }
+
         // check if authentication is successful
         String accessToken = jwtService.generateAccessToken(user.getId(), request.getEmail(), user.getAuthorities());
         String refreshToken = jwtService.generateRefreshToken(user.getId(), request.getEmail(), user.getAuthorities());
