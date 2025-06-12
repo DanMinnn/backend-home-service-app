@@ -20,5 +20,6 @@ public class UserResponse implements Serializable {
     private String email;
     private String profileImage;
     private boolean isActive;
+    private String taskerStatus;
     private LocalDateTime lastLogin;
 }

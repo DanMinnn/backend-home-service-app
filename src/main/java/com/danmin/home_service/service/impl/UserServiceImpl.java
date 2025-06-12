@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import com.danmin.home_service.common.UserType;
 import com.danmin.home_service.dto.request.AddressDTO;
 import com.danmin.home_service.dto.request.UserDTO;
 import com.danmin.home_service.dto.response.PageResponse;
@@ -107,13 +108,14 @@ public class UserServiceImpl implements UserService {
 
         Pageable pageable = PageRequest.of(page, pageSize);
 
-        Page<User> users = userRepository.findAll(pageable);
+        Page<User> users = userRepository.findUserByUserType(UserType.customer, pageable);
 
         List<UserResponse> responses = users.stream().map(user -> UserResponse.builder()
                 .id(user.getId())
                 .firstLastName(user.getFirstLastName())
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
+                .profileImage(user.getProfileImage())
                 .isActive(user.getIsActive())
                 .lastLogin(user.getLastLogin()).build()).toList();
 
@@ -140,6 +142,8 @@ public class UserServiceImpl implements UserService {
                 .firstLastName(tasker.getFirstLastName())
                 .email(tasker.getEmail())
                 .phoneNumber(tasker.getPhoneNumber())
+                .profileImage(tasker.getProfileImage())
+                .taskerStatus(tasker.getAvailabilityStatus().name())
                 .isActive(tasker.getIsActive())
                 .lastLogin(tasker.getLastLogin()).build()).toList();
 

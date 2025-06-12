@@ -44,7 +44,6 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
     private final TaskerRoleRepository taskerRoleRepository;
-
     // wallet
     private final UserWalletRepository userWalletRepository;
     private final TaskerWalletRepository taskerWalletRepository;
@@ -55,27 +54,45 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         if (userType.equals(User.class)) {
 
-            Role userRole = roleRepository.findByRoleName("user").orElse(null);
-
             UserRegisterDTO userDTO = (UserRegisterDTO) dto;
-            User user = User.builder()
-                    .email(dto.getEmail())
-                    .phoneNumber(dto.getPhoneNumber())
-                    .passwordHash(encodedPassword)
-                    .firstLastName(dto.getFirstLastName())
-                    .isVerified(dto.isVerify())
-                    .isActive(dto.isActive())
-                    .userType(userDTO.getType())
-                    .build();
 
-            User savedUser = userRepository.save(user);
+            if (userDTO.getType().equals("admin")) {
+                Role adminRole = roleRepository.findByRoleName("admin").orElse(null);
+                User user = User.builder()
+                        .email(dto.getEmail())
+                        .phoneNumber(dto.getPhoneNumber())
+                        .passwordHash(encodedPassword)
+                        .firstLastName(dto.getFirstLastName())
+                        .isVerified(dto.isVerify())
+                        .isActive(dto.isActive())
+                        .userType(userDTO.getType())
+                        .build();
 
-            // role user
-            userRoleRepository.save(UserRole.builder().user(savedUser).role(userRole).build());
-            // wallet user
-            userWalletRepository.save(UserWallet.builder().user(savedUser).balance(BigDecimal.valueOf(500000))
-                    .updatedAt(LocalDateTime.now()).build());
-            return savedUser.getId();
+                User savedUser = userRepository.save(user);
+                userRoleRepository.save(UserRole.builder().user(savedUser).role(adminRole).build());
+                return savedUser.getId();
+            } else {
+
+                Role userRole = roleRepository.findByRoleName("user").orElse(null);
+                User user = User.builder()
+                        .email(dto.getEmail())
+                        .phoneNumber(dto.getPhoneNumber())
+                        .passwordHash(encodedPassword)
+                        .firstLastName(dto.getFirstLastName())
+                        .isVerified(dto.isVerify())
+                        .isActive(dto.isActive())
+                        .userType(userDTO.getType())
+                        .build();
+
+                User savedUser = userRepository.save(user);
+
+                // role user
+                userRoleRepository.save(UserRole.builder().user(savedUser).role(userRole).build());
+                // wallet user
+                userWalletRepository.save(UserWallet.builder().user(savedUser).balance(BigDecimal.valueOf(500000))
+                        .updatedAt(LocalDateTime.now()).build());
+                return savedUser.getId();
+            }
 
         } else if (userType.equals(Tasker.class)) {
 

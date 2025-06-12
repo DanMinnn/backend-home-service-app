@@ -91,7 +91,7 @@ public class UserController {
     }
 
     @Operation(summary = "Get all users")
-    @GetMapping("/list")
+    @GetMapping("/list-users")
     public ResponseData<?> getAllUsers(@RequestParam(defaultValue = "0", required = false) int pageNo,
             @RequestParam(defaultValue = "10", required = false) int pageSize) {
         log.info("Getting all user ");
@@ -128,7 +128,7 @@ public class UserController {
     }
 
     @Operation(summary = "Get all taskers")
-    @GetMapping("/list-tasker")
+    @GetMapping("/list-taskers")
     public ResponseData<?> getAllTaskers(@RequestParam(defaultValue = "0", required = false) int pageNo,
             @RequestParam(defaultValue = "10", required = false) int pageSize) {
         log.info("Getting all user ");
