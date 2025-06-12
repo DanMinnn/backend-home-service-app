@@ -2,13 +2,9 @@ package com.danmin.home_service.service.impl;
 
 import java.util.List;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import com.danmin.home_service.common.UserType;
 import com.danmin.home_service.dto.request.AddressDTO;
 import com.danmin.home_service.dto.request.UserDTO;
 import com.danmin.home_service.dto.response.PageResponse;
@@ -101,21 +97,30 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public PageResponse<?> getAllUser(int pageNo, int pageSize) {
-        int page = 0;
+        List<User> users = userRepository.findAll();
 
-        if (pageNo > 0)
-            page = pageNo - 1;
+        int totalItems = users.size();
+        int start = Math.max(0, (pageNo - 1) * pageSize);
+        int end = Math.min(start + pageSize, totalItems);
 
-        Pageable pageable = PageRequest.of(page, pageSize);
+        if (start >= totalItems) {
+            return PageResponse.builder()
+                    .pageNo(pageNo)
+                    .pageSize(pageSize)
+                    .totalPage((int) Math.ceil((double) totalItems / pageSize))
+                    .items(List.of())
+                    .build();
+        }
 
-        Page<User> users = userRepository.findUserByUserType(UserType.customer, pageable);
+        List<User> pagedUsers = users.subList(start, end);
 
-        List<UserResponse> responses = users.stream().map(user -> UserResponse.builder()
+        List<UserResponse> responses = pagedUsers.stream().map(user -> UserResponse.builder()
                 .id(user.getId())
                 .firstLastName(user.getFirstLastName())
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
                 .profileImage(user.getProfileImage())
+                .createAt(user.getCreatedAt())
                 .isActive(user.getIsActive())
                 .lastLogin(user.getLastLogin()).build()).toList();
 
@@ -128,28 +133,39 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public PageResponse<?> getAllTasker(int pageNo, int pageSize) {
-        int page = 0;
 
-        if (pageNo > 0)
-            page = pageNo - 1;
+        List<Tasker> taskers = taskerRepository.findAll();
 
-        Pageable pageable = PageRequest.of(page, pageSize);
+        int totalItems = taskers.size();
+        int start = Math.max(0, (pageNo - 1) * pageSize);
+        int end = Math.min(start + pageSize, totalItems);
 
-        Page<Tasker> taskers = taskerRepository.findAll(pageable);
+        if (start >= totalItems) {
+            return PageResponse.builder()
+                    .pageNo(pageNo)
+                    .pageSize(pageSize)
+                    .totalPage((int) Math.ceil((double) totalItems / pageSize))
+                    .items(List.of())
+                    .build();
+        }
 
-        List<UserResponse> responses = taskers.stream().map(tasker -> UserResponse.builder()
+        List<Tasker> pagedTaskersList = taskers.subList(start, end);
+
+        List<UserResponse> responses = pagedTaskersList.stream().map(tasker -> UserResponse.builder()
                 .id(tasker.getId())
                 .firstLastName(tasker.getFirstLastName())
                 .email(tasker.getEmail())
                 .phoneNumber(tasker.getPhoneNumber())
                 .profileImage(tasker.getProfileImage())
                 .taskerStatus(tasker.getAvailabilityStatus().name())
+                .createAt(tasker.getCreatedAt())
                 .isActive(tasker.getIsActive())
                 .lastLogin(tasker.getLastLogin()).build()).toList();
 
         return PageResponse.builder()
                 .pageNo(pageNo)
                 .pageSize(pageSize)
+                .totalPage((int) Math.ceil((double) totalItems / pageSize))
                 .items(responses)
                 .build();
     }

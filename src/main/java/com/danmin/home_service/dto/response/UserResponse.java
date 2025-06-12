@@ -2,6 +2,7 @@ package com.danmin.home_service.dto.response;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Date;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,4 +23,5 @@ public class UserResponse implements Serializable {
     private boolean isActive;
     private String taskerStatus;
     private LocalDateTime lastLogin;
+    private Date createAt;
 }
