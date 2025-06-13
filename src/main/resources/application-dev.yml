@@ -31,8 +31,8 @@ spring:
     fromEmail: ${SENDGRID_FROM_EMAIL}
     templateId: ${SENDGRID_TEMPLATE_ID}
     templateIdChangePassword: ${SENDGRID_TEMPLATE_ID_CHANGE_PASSWORD}
-    verificationLink: https://8799-14-191-193-67.ngrok-free.app/register/confirm-email
-    changePasswordLink: https://9d14-14-191-193-67.ngrok-free.app/auth/tasker/reset-password
+    verificationLink: https://b639-14-191-193-79.ngrok-free.app/register/confirm-email
+    changePasswordLink: https://6d13-14-191-193-7.ngrok-free.app/auth/reset-password
 
 springdoc:
   api-docs:

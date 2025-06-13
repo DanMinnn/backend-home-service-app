@@ -359,6 +359,165 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    public PageResponse<?> getAllBookings(
+            int pageNo,
+            int pageSize,
+            String status,
+            String selectedDate,
+            String customerSearch,
+            String taskerSearch,
+            String sortField,
+            String sortOrder) {
+
+        try {
+            final LocalDate filterDate;
+            final BookingStatus bookingStatus;
+
+            // Parse selectedDate if provided
+            if (selectedDate != null && !selectedDate.isEmpty()) {
+                try {
+                    filterDate = LocalDate.parse(
+                            selectedDate.trim(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                } catch (DateTimeParseException e) {
+                    log.warn("Invalid date format: {}. Expected yyyy-MM-dd format.", selectedDate);
+                    throw new IllegalArgumentException("Invalid date format. Please use yyyy-MM-dd format.");
+                }
+            } else {
+                filterDate = null;
+            }
+
+            // Parse status if provided
+            if (status != null && !status.isEmpty()) {
+                try {
+                    bookingStatus = BookingStatus.valueOf(status.toLowerCase());
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid booking status: {}", status);
+                    throw new IllegalArgumentException("Invalid booking status: " + status);
+                }
+            } else {
+                bookingStatus = null;
+            }
+
+            // Start with all bookings
+            List<Bookings> bookings = bookingRepository.findAll();
+
+            // Apply filters one by one
+            if (filterDate != null) {
+                bookings = bookings.stream()
+                        .filter(b -> b.getScheduledStart() != null &&
+                                b.getScheduledStart().toLocalDate().equals(filterDate))
+                        .collect(Collectors.toList());
+            }
+
+            if (bookingStatus != null) {
+                bookings = bookings.stream()
+                        .filter(b -> b.getBookingStatus() == bookingStatus)
+                        .collect(Collectors.toList());
+            }
+
+            if (customerSearch != null && !customerSearch.isEmpty()) {
+                List<Bookings> customerBookings = bookingRepository.findBookingsByCustomerName(customerSearch);
+                bookings = customerBookings;
+                // bookings.stream()
+                // .filter(customerBookings::contains)
+                // .collect(Collectors.toList());
+            }
+
+            if (taskerSearch != null && !taskerSearch.isEmpty()) {
+                List<Bookings> taskerBookings = bookingRepository.findBookingsByTaskerName(taskerSearch);
+                bookings = taskerBookings;
+                // bookings.stream()
+                // .filter(taskerBookings::contains)
+                // .collect(Collectors.toList());
+            }
+
+            // Apply sorting
+            if (sortField != null && !sortField.isEmpty()) {
+                boolean ascending = sortOrder == null || sortOrder.equalsIgnoreCase("asc");
+
+                bookings = applySorting(bookings, sortField, ascending);
+            } else {
+                // Default sorting by scheduled start time
+                bookings = bookings.stream()
+                        .sorted(Comparator.comparing(
+                                b -> b.getScheduledStart() != null ? b.getScheduledStart() : LocalDateTime.MAX))
+                        .collect(Collectors.toList());
+            }
+
+            // Pagination
+            int totalItems = bookings.size();
+            int start = Math.max(0, (pageNo - 1) * pageSize);
+            int end = Math.min(start + pageSize, totalItems);
+
+            if (start >= totalItems) {
+                return PageResponse.builder()
+                        .pageNo(pageNo)
+                        .pageSize(pageSize)
+                        .totalPage((int) Math.ceil((double) totalItems / pageSize))
+                        .items(List.of())
+                        .build();
+            }
+
+            List<Bookings> pagedBookings = bookings.subList(start, end);
+            List<BookingDetailResponse> bookingDetails = bookingDetailResponses(pagedBookings);
+
+            return PageResponse.builder()
+                    .pageNo(pageNo)
+                    .pageSize(pageSize)
+                    .totalPage((int) Math.ceil((double) totalItems / pageSize))
+                    .items(bookingDetails)
+                    .build();
+
+        } catch (ResourceNotFoundException | IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error getting bookings: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve bookings: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Apply sorting to a list of bookings based on field name and direction
+     */
+    private List<Bookings> applySorting(List<Bookings> bookings, String sortField, boolean ascending) {
+        Comparator<Bookings> comparator;
+
+        switch (sortField.toLowerCase()) {
+            case "id":
+                comparator = Comparator.comparing(Bookings::getId);
+                break;
+            case "status":
+                comparator = Comparator.comparing(b -> b.getBookingStatus().name());
+                break;
+            case "price":
+                comparator = Comparator.comparing(Bookings::getTotalPrice);
+                break;
+            case "created":
+                comparator = Comparator.comparing(Bookings::getCreatedAt);
+                break;
+            case "customername":
+                comparator = Comparator.comparing(b -> b.getUser() != null ? b.getUser().getFirstLastName() : "");
+                break;
+            case "taskername":
+                comparator = Comparator.comparing(b -> b.getTasker() != null ? b.getTasker().getFirstLastName() : "");
+                break;
+            case "date":
+            default:
+                comparator = Comparator.comparing(
+                        b -> b.getScheduledStart() != null ? b.getScheduledStart() : LocalDateTime.MAX);
+                break;
+        }
+
+        if (!ascending) {
+            comparator = comparator.reversed();
+        }
+
+        return bookings.stream()
+                .sorted(comparator)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public PageResponse<?> getBookingFilteringStatus(int pageNo, int pageSize, Integer userId, String status) {
         try {
             // Convert the status string to BookingStatus enum

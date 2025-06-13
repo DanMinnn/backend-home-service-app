@@ -107,6 +107,35 @@ public class BookingController {
         }
     }
 
+    @Operation(summary = "Get all booking with filter or no filter")
+    @GetMapping("/get-all-bookings")
+    public ResponseData<?> getAllBookings(
+            @RequestParam(defaultValue = "0", required = false) int pageNo,
+            @RequestParam(defaultValue = "10", required = false) int pageSize,
+            @RequestParam(required = false) String selectedDate,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String customerSearch,
+            @RequestParam(required = false) String taskerSearch,
+            @RequestParam(required = false) String sortField,
+            @RequestParam(required = false) String sortOrder) {
+
+        try {
+            log.info("Getting all bookings with filters - page: {}, size: {}, date: {}, status: {}, " +
+                    "customer: {}, tasker: {}, sort: {}, order: {}", 
+                    pageNo, pageSize, selectedDate, status, customerSearch, taskerSearch, sortField, sortOrder);
+            
+            return new ResponseData<>(HttpStatus.OK.value(), "Get all bookings",
+                    bookingService.getAllBookings(pageNo, pageSize, status, selectedDate, 
+                            customerSearch, taskerSearch, sortField, sortOrder));
+        } catch (ResourceNotFoundException e) {
+            log.error("errorMessage={}", e.getMessage(), e.getCause());
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid parameter value: {}", e.getMessage());
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Invalid parameter value: " + e.getMessage());
+        }
+    }
+
     @Operation(summary = "Cancel booking by user")
     @PutMapping("/cancel-booking-by-user/{bookingId}")
 

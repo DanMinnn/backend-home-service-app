@@ -80,6 +80,7 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
         @Query("SELECT b FROM Bookings b WHERE b.id = :id")
         Optional<Bookings> findByIdWithPessimisticLock(@Param("id") Long id);
 
+        // schedule
         @Query("SELECT b FROM Bookings b " +
                         "WHERE b.bookingStatus = 'assigned' " +
                         "AND b.scheduledStart <= :now AND b.scheduledEnd > :now")
@@ -89,4 +90,47 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
                         "WHERE b.tasker.id = :taskerId " +
                         "AND b.bookingStatus = 'completed' OR b.bookingStatus = 'cancelled'")
         List<Bookings> findHistoryTask(@Param("taskerId") Integer taskerId);
+
+        /*
+         * Get all bookings filtered by status and selectedDate
+         */
+        @Query("SELECT b FROM Bookings b WHERE b.bookingStatus = :status " +
+                        "AND DATE(b.scheduledStart) = :selectedDate " +
+                        "ORDER BY b.scheduledStart ASC")
+        List<Bookings> getAllBookingsFilterByStatusAndSpecifiedDate(
+                        @Param("status") BookingStatus status,
+                        @Param("selectedDate") LocalDate selectedDate);
+
+        /*
+         * Get all bookings filtered by status
+         */
+        @Query("SELECT b FROM Bookings b WHERE b.bookingStatus = :status ")
+        List<Bookings> getAllBookingsFilterByStatus(
+                        @Param("status") BookingStatus status);
+
+        /*
+         * Get all bookings filtered by selectedDate
+         */
+        @Query("SELECT b FROM Bookings b WHERE DATE(b.scheduledStart) = :selectedDate " +
+                        "ORDER BY b.scheduledStart ASC")
+        List<Bookings> getAllBookingsBySpecifiedDate(
+                        @Param("selectedDate") LocalDate selectedDate);
+
+        /*
+         * Get all bookings with no filter
+         */
+        @Query("SELECT b FROM Bookings b ORDER BY b.scheduledStart ASC")
+        List<Bookings> getAllBookingsWithNoFilter();
+
+        /*
+         * Search bookings by customer name
+         */
+        @Query("SELECT b FROM Bookings b WHERE LOWER(b.user.firstLastName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) ")
+        List<Bookings> findBookingsByCustomerName(@Param("searchTerm") String searchTerm);
+
+        /*
+         * Search bookings by tasker name
+         */
+        @Query("SELECT b FROM Bookings b WHERE b.tasker IS NOT NULL AND LOWER(b.tasker.firstLastName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) ")
+        List<Bookings> findBookingsByTaskerName(@Param("searchTerm") String searchTerm);
 }

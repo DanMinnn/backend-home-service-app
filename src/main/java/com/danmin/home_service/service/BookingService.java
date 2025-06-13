@@ -33,4 +33,14 @@ public interface BookingService {
     void completedJob(long bookingId);
 
     void rating(ReviewDTO req);
+
+    PageResponse<?> getAllBookings(
+        int pageNo, 
+        int pageSize, 
+        String status, 
+        String selectedDate, 
+        String customerSearch,
+        String taskerSearch,
+        String sortField,
+        String sortOrder);
 }
