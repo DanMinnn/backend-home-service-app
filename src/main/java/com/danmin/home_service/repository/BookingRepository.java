@@ -133,4 +133,34 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
          */
         @Query("SELECT b FROM Bookings b WHERE b.tasker IS NOT NULL AND LOWER(b.tasker.firstLastName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) ")
         List<Bookings> findBookingsByTaskerName(@Param("searchTerm") String searchTerm);
+
+        /*
+         * Queries below for statistics
+         */
+        @Query("SELECT COUNT(b) FROM Bookings b WHERE b.bookingStatus = 'completed' AND b.updatedAt BETWEEN :fromDate AND :toDate")
+        Long countCompletedTasksByDateRange(@Param("fromDate") LocalDateTime fromDate,
+                        @Param("toDate") LocalDateTime toDate);
+
+        @Query("SELECT COUNT(b) FROM Bookings b WHERE b.bookingStatus = 'pending'")
+        Long countPendingBookings();
+
+        @Query("SELECT b FROM Bookings b ORDER BY b.createdAt DESC")
+        List<Bookings> findRecentBookings(Pageable pageable);
+
+        @Query("SELECT s.id as serviceId, s.name as serviceName, COUNT(b) as bookingCount " +
+                        "FROM Bookings b JOIN b.service s " +
+                        "WHERE b.createdAt BETWEEN :fromDate AND :toDate " +
+                        "GROUP BY s.id, s.name ORDER BY COUNT(b) DESC")
+        List<Object[]> findMostBookedServices(
+                        @Param("fromDate") LocalDateTime fromDate,
+                        @Param("toDate") LocalDateTime toDate,
+                        Pageable pageable);
+
+        @Query("SELECT b.bookingStatus as status, COUNT(b) as count " +
+                        "FROM Bookings b " +
+                        "WHERE b.createdAt BETWEEN :fromDate AND :toDate " +
+                        "GROUP BY b.bookingStatus")
+        List<Object[]> findBookingStatusDistribution(
+                        @Param("fromDate") LocalDateTime fromDate,
+                        @Param("toDate") LocalDateTime toDate);
 }
