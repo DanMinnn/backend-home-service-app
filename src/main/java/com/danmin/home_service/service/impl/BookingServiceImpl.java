@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -854,7 +853,7 @@ public class BookingServiceImpl implements BookingService {
         Tasker tasker = taskerRepository.findById(taskerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tasker not found with id: " + taskerId));
 
-        booking.setCompletedAt(new Date());
+        booking.setCompletedAt(LocalDateTime.now());
         booking.setBookingStatus(BookingStatus.completed);
         booking.setPaymentStatus("paid");
         bookingRepository.save(booking);

@@ -3,7 +3,6 @@ package com.danmin.home_service.dto.response;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.Map;
 
 import lombok.AllArgsConstructor;
@@ -40,6 +39,6 @@ public class BookingDetailResponse implements Serializable {
     private String address;
     private BigDecimal latitude;
     private BigDecimal longitude;
-    private Date completedAt;
+    private LocalDateTime completedAt;
 
 }

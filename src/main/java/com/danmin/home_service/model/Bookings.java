@@ -2,7 +2,6 @@ package com.danmin.home_service.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.Map;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -59,7 +58,7 @@ public class Bookings extends AbstractEntity<Long> {
 
     @Column(name = "completed_at")
     @CreationTimestamp
-    private Date completedAt;
+    private LocalDateTime completedAt;
 
     @Column(name = "latitude")
     private BigDecimal latitude;
