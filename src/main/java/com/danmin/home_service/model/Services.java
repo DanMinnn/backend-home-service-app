@@ -36,6 +36,10 @@ public class Services extends AbstractEntity<Long> {
     @Builder.Default
     private Boolean isActive = true;
 
+    @Column(name = "is_deleted")
+    @Builder.Default
+    private Boolean isDeleted = false;
+
     @OneToMany(mappedBy = "services", fetch = FetchType.LAZY)
     @Builder.Default
     private Set<ServicePackages> servicePackages = new HashSet<>();

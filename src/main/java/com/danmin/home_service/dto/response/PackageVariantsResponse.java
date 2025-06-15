@@ -16,4 +16,5 @@ public class PackageVariantsResponse implements Serializable {
     private String name;
     private String description;
     private BigDecimal additionalPrice;
+    private boolean isDeleted;
 }

@@ -122,6 +122,7 @@ public class UserServiceImpl implements UserService {
                 .profileImage(user.getProfileImage())
                 .createAt(user.getCreatedAt())
                 .isActive(user.getIsActive())
+                .userType(user.getUserType().name())
                 .lastLogin(user.getLastLogin()).build()).toList();
 
         return PageResponse.builder()

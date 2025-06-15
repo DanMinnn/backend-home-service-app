@@ -32,6 +32,10 @@ public class ServicePackages extends AbstractEntityNoDate<Long> {
     @Column(name = "base_price")
     private BigDecimal basePrice;
 
+    @Column(name = "is_deleted")
+    @Builder.Default
+    private Boolean isDeleted = false;
+
     @OneToMany(mappedBy = "servicePackages", fetch = FetchType.LAZY)
     @Builder.Default
     private Set<PackageVariants> packageVariants = new HashSet<>();

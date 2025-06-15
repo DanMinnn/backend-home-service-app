@@ -30,4 +30,8 @@ public class PackageVariants extends AbstractEntityNoDate<Long> {
     @Column(name = "additional_price")
     private BigDecimal additionalPrice;
 
+    @Column(name = "is_deleted")
+    @Builder.Default
+    private Boolean isDeleted = false;
+
 }

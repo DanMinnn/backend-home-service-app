@@ -3,8 +3,10 @@ package com.danmin.home_service.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.danmin.home_service.dto.request.PackageDTO;
 import com.danmin.home_service.dto.request.ServiceCategoryDTO;
 import com.danmin.home_service.dto.request.ServiceDTO;
+import com.danmin.home_service.dto.request.VariantDTO;
 import com.danmin.home_service.dto.response.ResponseData;
 import com.danmin.home_service.dto.response.ResponseError;
 import com.danmin.home_service.service.ServicesService;
@@ -13,6 +15,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.security.InvalidParameterException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -38,8 +43,10 @@ public class ServiceController {
 
         try {
             servicesService.addServiceCategory(req);
-            return new ResponseData<>(HttpStatus.ACCEPTED.value(), "Added category successfully");
+            return new ResponseData<>(HttpStatus.OK.value(), "Added category successfully");
 
+        } catch (InvalidParameterException e) {
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
         } catch (Exception e) {
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Add category failure");
         }
@@ -53,7 +60,7 @@ public class ServiceController {
 
         try {
             servicesService.updateCategory(categoryId, req);
-            return new ResponseData<>(HttpStatus.ACCEPTED.value(), "Updated category successfully");
+            return new ResponseData<>(HttpStatus.OK.value(), "Updated category successfully");
 
         } catch (Exception e) {
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Updated category failure");
@@ -67,13 +74,14 @@ public class ServiceController {
 
         try {
             servicesService.deleteCategory(categoryId);
-            return new ResponseData<>(HttpStatus.ACCEPTED.value(), "Deleted category successfully");
+            return new ResponseData<>(HttpStatus.OK.value(), "Deleted category successfully");
 
         } catch (Exception e) {
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Deleted category failure");
         }
     }
 
+    // ========================== SERVICE ==============================
     @Operation(summary = "Add service ")
     @PostMapping("/add-service/{categoryId}")
     public ResponseData<?> addService(@PathVariable(value = "categoryId") long categoryId,
@@ -82,8 +90,10 @@ public class ServiceController {
 
         try {
             servicesService.addService(categoryId, req);
-            return new ResponseData<>(HttpStatus.ACCEPTED.value(), "Added service successfully");
+            return new ResponseData<>(HttpStatus.OK.value(), "Added service successfully");
 
+        } catch (InvalidParameterException e) {
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
         } catch (Exception e) {
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Add service failure");
         }
@@ -97,7 +107,7 @@ public class ServiceController {
 
         try {
             servicesService.updateService(serviceId, req);
-            return new ResponseData<>(HttpStatus.ACCEPTED.value(), "Updated service successfully");
+            return new ResponseData<>(HttpStatus.OK.value(), "Updated service successfully");
 
         } catch (Exception e) {
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Updated service failure");
@@ -111,10 +121,104 @@ public class ServiceController {
 
         try {
             servicesService.deleteService(serviceId);
-            return new ResponseData<>(HttpStatus.ACCEPTED.value(), "Deleted service successfully");
+            return new ResponseData<>(HttpStatus.OK.value(), "Deleted service successfully");
 
         } catch (Exception e) {
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Deleted service failure");
+        }
+    }
+
+    // ========================== PACKAGE ==============================
+    @Operation(summary = "Add package ")
+    @PostMapping("/add-package/{serviceId}")
+    public ResponseData<?> addPackage(@PathVariable(value = "serviceId") long serviceId,
+            @RequestBody PackageDTO req) {
+        log.info("Saving package...");
+
+        try {
+            servicesService.addPackage(serviceId, req);
+            return new ResponseData<>(HttpStatus.OK.value(), "Added package successfully");
+
+        } catch (InvalidParameterException e) {
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+        } catch (Exception e) {
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Add package failure");
+        }
+    }
+
+    @Operation(summary = "Update package")
+    @PutMapping("/update-package/{packageId}")
+    public ResponseData<?> updatePackage(@PathVariable(value = "packageId") long packageId,
+            @RequestBody PackageDTO req) {
+        log.info("Updating package...");
+
+        try {
+            servicesService.updatePackage(packageId, req);
+            return new ResponseData<>(HttpStatus.OK.value(), "Updated package successfully");
+
+        } catch (Exception e) {
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Updated package failure");
+        }
+    }
+
+    @Operation(summary = "Delete package")
+    @DeleteMapping("/delete-package/{packageId}")
+    public ResponseData<?> deletePackage(@PathVariable(value = "packageId") long packageId) {
+        log.info("Deleting package...");
+
+        try {
+            servicesService.deletePackge(packageId);
+            return new ResponseData<>(HttpStatus.OK.value(), "Deleted package successfully");
+
+        } catch (Exception e) {
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Deleted package failure");
+        }
+    }
+
+    // ========================== VARIANT ==============================
+    @Operation(summary = "Add variant ")
+    @PostMapping("/add-variant/{packageId}")
+    public ResponseData<?> addVariant(@PathVariable(value = "packageId") long packageId,
+            @RequestBody VariantDTO req) {
+        log.info("Saving variant...");
+
+        try {
+            servicesService.addVariant(packageId, req);
+            return new ResponseData<>(HttpStatus.OK.value(), "Added variant successfully");
+
+        } catch (InvalidParameterException e) {
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+        } catch (Exception e) {
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Add variant failure");
+        }
+    }
+
+    @Operation(summary = "Update variant")
+    @PutMapping("/update-variant/{variantId}")
+    public ResponseData<?> updateVariant(@PathVariable(value = "variantId") long variantId,
+            @RequestBody VariantDTO req) {
+        log.info("Updating variant...");
+
+        try {
+            servicesService.updateVariant(variantId, req);
+            return new ResponseData<>(HttpStatus.OK.value(), "Updated variant successfully");
+
+        } catch (Exception e) {
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Updated variant failure");
+        }
+    }
+
+    @Operation(summary = "Delete variant")
+    @DeleteMapping("/delete-variant/{variantId}")
+    public ResponseData<?> deleteVariant(@PathVariable(value = "variantId") long variantId) {
+        log.info("Deleting package...");
+
+        try {
+            servicesService.deleteVariant(variantId);
+            return new ResponseData<>(HttpStatus.OK.value(), "Deleted variant successfully");
+
+        } catch (Exception e) {
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Deleted variant failure");
         }
     }
 

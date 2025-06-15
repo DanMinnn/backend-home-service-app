@@ -17,4 +17,5 @@ public class ServiceResponse implements Serializable {
     private String description;
     private String icon;
     private Boolean isActive;
+    private Boolean isDeleted;
 }

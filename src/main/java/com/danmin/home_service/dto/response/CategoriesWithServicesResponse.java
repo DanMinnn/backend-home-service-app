@@ -15,6 +15,7 @@ public class CategoriesWithServicesResponse implements Serializable {
     private Integer id;
     private String name;
     private boolean isActive;
+    private boolean isDeleted;
     private Set<ServiceResponse> services;
 
 }

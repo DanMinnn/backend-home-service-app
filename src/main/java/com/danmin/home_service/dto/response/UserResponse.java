@@ -24,4 +24,5 @@ public class UserResponse implements Serializable {
     private String taskerStatus;
     private LocalDateTime lastLogin;
     private Date createAt;
+    private String userType;
 }

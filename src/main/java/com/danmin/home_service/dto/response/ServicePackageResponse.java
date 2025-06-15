@@ -15,5 +15,6 @@ public class ServicePackageResponse implements Serializable {
     private Long id;
     private String name;
     private boolean isActive;
+    private boolean isDeleted;
     private Set<PackageResponse> servicePackages;
 }
