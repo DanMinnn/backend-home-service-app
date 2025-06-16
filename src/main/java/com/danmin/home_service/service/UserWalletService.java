@@ -227,11 +227,20 @@ public class UserWalletService {
                     paymentStatus = PaymentStatus.partial_refund;
                 }
 
-                payment.setStatus(paymentStatus);
-                payment.setRefundAmount(refundAmount);
-                payment.setRefundReason(refundReason);
-                payment.setRefundDate(new Date());
-                paymentRepository.save(payment);
+                String transactionId = "REF_INV_" + String.valueOf(System.currentTimeMillis());
+
+                paymentRepository.save(Payments.builder()
+                        .booking(booking)
+                        .user(booking.getUser())
+                        .refundAmount(refundAmount)
+                        .refundReason(refundReason)
+                        .refundDate(new Date())
+                        .amount(booking.getTotalPrice())
+                        .currency("VND")
+                        .methodType(payment.getMethodType())
+                        .status(paymentStatus)
+                        .paymentGateway(payment.getPaymentGateway())
+                        .transactionId(transactionId).build());
 
                 // Update wallet balance
                 wallet.setBalance(wallet.getBalance().add(refundAmount));

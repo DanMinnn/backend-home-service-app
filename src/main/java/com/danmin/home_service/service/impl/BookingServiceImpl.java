@@ -93,7 +93,7 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Service package not found with id: " + req.getPackageId()));
 
-        String transactionId = String.valueOf(System.currentTimeMillis());
+        String transactionId = "INV_" + String.valueOf(System.currentTimeMillis());
 
         Bookings bookings = Bookings.builder()
                 .user(user)
@@ -151,6 +151,18 @@ public class BookingServiceImpl implements BookingService {
             return response;
         } else {
             bookingRepository.save(bookings);
+
+            paymentRepository.save(Payments.builder()
+                    .booking(bookings)
+                    .user(bookings.getUser())
+                    .tasker(bookings.getTasker())
+                    .amount(bookings.getTotalPrice())
+                    .currency("VND")
+                    .methodType(MethodType.cash)
+                    .status(PaymentStatus.pending)
+                    .transactionId(transactionId)
+                    .paymentGateway(MethodType.cash.toString()).build());
+
             notificationService.notifyAvailableTaskers(bookings.getId());
             Map<String, Object> response = new HashMap<>();
             response.put("bookingId", bookings.getId());
@@ -871,9 +883,17 @@ public class BookingServiceImpl implements BookingService {
         Tasker tasker = taskerRepository.findById(taskerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tasker not found with id: " + taskerId));
 
+        Payments payment = paymentRepository.findPaymentByBookingId(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found with bookingId: " + bookingId));
+
+        if (booking.getPaymentStatus() == "unpaid") {
+            payment.setStatus(PaymentStatus.completed);
+            paymentRepository.save(payment);
+
+            booking.setPaymentStatus("paid");
+        }
         booking.setCompletedAt(LocalDateTime.now());
         booking.setBookingStatus(BookingStatus.completed);
-        booking.setPaymentStatus("paid");
         bookingRepository.save(booking);
 
         tasker.setAvailabilityStatus(AvailabilityStatus.available);

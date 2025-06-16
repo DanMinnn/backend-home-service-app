@@ -56,6 +56,7 @@ public class Payments extends AbstractEntityNoDate<Integer> {
     private Date paymentDate;
 
     @Column(name = "refund_amount")
+    @Builder.Default
     private BigDecimal refundAmount = BigDecimal.ZERO;
 
     @Column(name = "refund_reason", columnDefinition = "TEXT")
