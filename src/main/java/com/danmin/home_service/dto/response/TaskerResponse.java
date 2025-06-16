@@ -23,4 +23,9 @@ public class TaskerResponse implements Serializable {
     private boolean isActive;
     private LocalDateTime lastLogin;
     private Set<ServiceResponse> services;
+    /**
+     * Represents the review details associated with the tasker.
+     * This includes ratings and feedback provided by users.
+     */
+    private TaskerReviewResponse taskerReviewResponse;
 }

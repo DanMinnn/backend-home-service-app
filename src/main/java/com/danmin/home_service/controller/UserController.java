@@ -182,4 +182,52 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "Add favorite tasker")
+    @PostMapping("/add-favorite-tasker/{bookingId}")
+    public ResponseData<?> saveFavoriteTasker(@PathVariable(value = "bookingId") long bookingId) {
+
+        log.info("Saving favorite tasker with id={}", bookingId);
+
+        try {
+            userService.saveFavoriteTasker(bookingId);
+            return new ResponseData<>(HttpStatus.ACCEPTED.value(), "Added favorite tasker successfully !");
+        } catch (Exception e) {
+            log.error("errorMessage={}", e.getMessage(), e.getCause());
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Delete favorite tasker")
+    @DeleteMapping("/delete-favorite-tasker/{fTaskerId}")
+    public ResponseData<?> deleteFavoriteTasker(@PathVariable(value = "fTaskerId") Integer fTaskerId) {
+
+        log.info("Deleting favorite tasker with id={}", fTaskerId);
+
+        try {
+            userService.deleteFavoriteTasker(fTaskerId);
+            return new ResponseData<>(HttpStatus.ACCEPTED.value(), "Deleted favorite tasker successfully !");
+        } catch (Exception e) {
+            log.error("errorMessage={}", e.getMessage(), e.getCause());
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Get all favorite taskers")
+    @GetMapping("/get-favorite-tasker/{userId}")
+    public ResponseData<?> getFavoriteTasker(@PathVariable(value = "userId") long userId,
+            @RequestParam(defaultValue = "0") int pageNo,
+            @RequestParam(defaultValue = "10") int pageSize) {
+
+        log.info("Getting all favorite tasker with id={}", userId);
+
+        try {
+
+            return new ResponseData<>(HttpStatus.ACCEPTED.value(), "All favorite tasker!",
+                    userService.getAllFavoriteTasker(userId, pageNo, pageSize));
+        } catch (Exception e) {
+            log.error("errorMessage={}", e.getMessage(), e.getCause());
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+        }
+    }
+
 }

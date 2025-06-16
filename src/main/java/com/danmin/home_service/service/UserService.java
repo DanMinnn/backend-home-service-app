@@ -22,4 +22,10 @@ public interface UserService {
     void saveAddress(long userId, AddressDTO address);
 
     UserResponse getProfileUser(String email);
+
+    void saveFavoriteTasker(long bookingId);
+
+    PageResponse<?> getAllFavoriteTasker(long userId, int pageNo, int pageSize);
+
+    void deleteFavoriteTasker(Integer fTaskerId);
 }

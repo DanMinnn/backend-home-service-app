@@ -8,13 +8,19 @@ import org.springframework.stereotype.Service;
 import com.danmin.home_service.dto.request.AddressDTO;
 import com.danmin.home_service.dto.request.UserDTO;
 import com.danmin.home_service.dto.response.PageResponse;
+import com.danmin.home_service.dto.response.TaskerResponse;
+import com.danmin.home_service.dto.response.TaskerReviewResponse;
 import com.danmin.home_service.dto.response.UserResponse;
 import com.danmin.home_service.exception.ResourceNotFoundException;
 import com.danmin.home_service.model.Address;
 import com.danmin.home_service.model.BaseUser;
+import com.danmin.home_service.model.Bookings;
+import com.danmin.home_service.model.FavoriteTasker;
 import com.danmin.home_service.model.Tasker;
 import com.danmin.home_service.model.User;
 import com.danmin.home_service.repository.AddressRepository;
+import com.danmin.home_service.repository.BookingRepository;
+import com.danmin.home_service.repository.FavoriteTaskerRepository;
 import com.danmin.home_service.repository.SearchRepository;
 import com.danmin.home_service.repository.TaskerRepository;
 import com.danmin.home_service.repository.UserRepository;
@@ -32,6 +38,8 @@ public class UserServiceImpl implements UserService {
     private final TaskerRepository taskerRepository;
     private final SearchRepository searchRepository;
     private final AddressRepository addressRepository;
+    private final BookingRepository bookingRepository;
+    private final FavoriteTaskerRepository favoriteTaskerRepository;
 
     @Override
     public void updateProfileUser(long userId, UserDTO req) {
@@ -128,6 +136,7 @@ public class UserServiceImpl implements UserService {
         return PageResponse.builder()
                 .pageNo(pageNo)
                 .pageSize(pageSize)
+                .totalPage((int) Math.ceil((double) totalItems / pageSize))
                 .items(responses)
                 .build();
     }
@@ -217,4 +226,65 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
+    @Override
+    public void saveFavoriteTasker(long bookingId) {
+        Bookings booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found !"));
+
+        favoriteTaskerRepository
+                .save(FavoriteTasker.builder().user(booking.getUser()).tasker(booking.getTasker())
+                        .service(booking.getService()).build());
+    }
+
+    @Override
+    public void deleteFavoriteTasker(Integer fTaskerId) {
+        FavoriteTasker fTasker = favoriteTaskerRepository.findByTaskerId(fTaskerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Favorite tasker not found !"));
+
+        favoriteTaskerRepository.delete(fTasker);
+    }
+
+    @Override
+    public PageResponse<?> getAllFavoriteTasker(long userId, int pageNo, int pageSize) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+
+        List<FavoriteTasker> favoriteTaskers = favoriteTaskerRepository.findByUserId(user.getId());
+
+        List<TaskerResponse> taskerResponses = favoriteTaskers.stream()
+                .map(favorite -> {
+                    Tasker tasker = favorite.getTasker();
+                    TaskerReviewResponse taskerReview = favoriteTaskerRepository.taskerReviewResponse(tasker.getId());
+                    return TaskerResponse.builder().id(tasker.getId())
+                            .fullName(tasker.getFirstLastName())
+                            .email(tasker.getEmail())
+                            .phoneNumber(tasker.getPhoneNumber())
+                            .profileImage(tasker.getProfileImage())
+                            .taskerReviewResponse(taskerReview)
+                            .build();
+                })
+                .toList();
+
+        int totalItems = taskerResponses.size();
+        int start = Math.max(0, (pageNo - 1) * pageSize);
+        int end = Math.min(start + pageSize, totalItems);
+
+        if (start >= totalItems) {
+            return PageResponse.builder()
+                    .pageNo(pageNo)
+                    .pageSize(pageSize)
+                    .totalPage((int) Math.ceil((double) totalItems / pageSize))
+                    .items(List.of())
+                    .build();
+        }
+
+        List<TaskerResponse> pagedResponses = taskerResponses.subList(start, end);
+
+        return PageResponse.builder()
+                .pageNo(pageNo)
+                .pageSize(pageSize)
+                .totalPage((int) Math.ceil((double) totalItems / pageSize))
+                .items(pagedResponses)
+                .build();
+    }
 }
