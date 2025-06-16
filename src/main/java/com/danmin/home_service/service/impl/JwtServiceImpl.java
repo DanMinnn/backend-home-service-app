@@ -116,7 +116,7 @@ public class JwtServiceImpl implements JwtService {
                 .claims(claims)
                 .subject(email)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7)) // 1w
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * expiredTime))
                 .signWith(getKey(TokenType.ACCESS_TOKEN), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -128,7 +128,7 @@ public class JwtServiceImpl implements JwtService {
                 .claims(claims)
                 .subject(email)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * expiredTime)) // 10 days
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * expiredTime))
                 .signWith(getKey(TokenType.REFRESH_TOKEN), SignatureAlgorithm.HS256)
                 .compact();
     }

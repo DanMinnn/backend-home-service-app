@@ -886,7 +886,7 @@ public class BookingServiceImpl implements BookingService {
         Payments payment = paymentRepository.findPaymentByBookingId(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found with bookingId: " + bookingId));
 
-        if (booking.getPaymentStatus() == "unpaid") {
+        if (booking.getPaymentStatus().equalsIgnoreCase("unpaid")) {
             payment.setStatus(PaymentStatus.completed);
             paymentRepository.save(payment);
 
