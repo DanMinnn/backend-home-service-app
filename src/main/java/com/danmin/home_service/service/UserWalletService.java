@@ -49,6 +49,7 @@ public class UserWalletService {
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found !"));
     }
 
+    @Transactional
     public WalletResponse getUserWallet(Long userId) {
         User user = getUserById(userId);
 

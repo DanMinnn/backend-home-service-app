@@ -81,7 +81,7 @@ public class BookingController {
     }
 
     @Operation(summary = "Booking details by userId")
-    @GetMapping("/{userId}/booking-detail/")
+    @GetMapping("/{userId}/booking-detail")
     public ResponseData<?> getBookingDetail(
             @PathVariable(value = "userId") Integer userId,
             @RequestParam(defaultValue = "0", required = false) int pageNo,
@@ -121,11 +121,11 @@ public class BookingController {
 
         try {
             log.info("Getting all bookings with filters - page: {}, size: {}, date: {}, status: {}, " +
-                    "customer: {}, tasker: {}, sort: {}, order: {}", 
+                    "customer: {}, tasker: {}, sort: {}, order: {}",
                     pageNo, pageSize, selectedDate, status, customerSearch, taskerSearch, sortField, sortOrder);
-            
+
             return new ResponseData<>(HttpStatus.OK.value(), "Get all bookings",
-                    bookingService.getAllBookings(pageNo, pageSize, status, selectedDate, 
+                    bookingService.getAllBookings(pageNo, pageSize, status, selectedDate,
                             customerSearch, taskerSearch, sortField, sortOrder));
         } catch (ResourceNotFoundException e) {
             log.error("errorMessage={}", e.getMessage(), e.getCause());

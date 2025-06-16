@@ -319,20 +319,30 @@ public class BookingServiceImpl implements BookingService {
                 })
                 .collect(Collectors.toList());
 
-        // Create pageable results
-        int start = pageNo > 0 ? (pageNo - 1) * pageSize : 0;
-        int end = Math.min(start + pageSize, sortedBookings.size());
+        // Pagination
+        int totalItems = sortedBookings.size();
+        int start = Math.max(0, (pageNo - 1) * pageSize);
+        int end = Math.min(start + pageSize, totalItems);
+
+        if (start >= totalItems) {
+            return PageResponse.builder()
+                    .pageNo(pageNo)
+                    .pageSize(pageSize)
+                    .totalPage((int) Math.ceil((double) totalItems / pageSize))
+                    .items(List.of())
+                    .build();
+        }
 
         List<Bookings> pagedBookings = sortedBookings.subList(start, end);
-
-        // Map to DTOs
         List<BookingDetailResponse> bookingDetails = bookingDetailResponses(pagedBookings);
 
         return PageResponse.builder()
                 .pageNo(pageNo)
                 .pageSize(pageSize)
+                .totalPage((int) Math.ceil((double) totalItems / pageSize))
                 .items(bookingDetails)
                 .build();
+
     }
 
     /**
@@ -562,18 +572,26 @@ public class BookingServiceImpl implements BookingService {
                     })
                     .collect(Collectors.toList());
 
-            // Create pageable results
-            int start = pageNo > 0 ? (pageNo - 1) * pageSize : 0;
-            int end = Math.min(start + pageSize, sortedBookings.size());
+            int totalItems = sortedBookings.size();
+            int start = Math.max(0, (pageNo - 1) * pageSize);
+            int end = Math.min(start + pageSize, totalItems);
+
+            if (start >= totalItems) {
+                return PageResponse.builder()
+                        .pageNo(pageNo)
+                        .pageSize(pageSize)
+                        .totalPage((int) Math.ceil((double) totalItems / pageSize))
+                        .items(List.of())
+                        .build();
+            }
 
             List<Bookings> pagedBookings = sortedBookings.subList(start, end);
-
-            // Map to DTOs
             List<BookingDetailResponse> bookingDetails = bookingDetailResponses(pagedBookings);
 
             return PageResponse.builder()
                     .pageNo(pageNo)
                     .pageSize(pageSize)
+                    .totalPage((int) Math.ceil((double) totalItems / pageSize))
                     .items(bookingDetails)
                     .build();
 
