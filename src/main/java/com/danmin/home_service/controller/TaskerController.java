@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.danmin.home_service.dto.request.TaskerServiceDTO;
 import com.danmin.home_service.dto.response.ResponseData;
 import com.danmin.home_service.dto.response.ResponseError;
-import com.danmin.home_service.service.ImageService;
 import com.danmin.home_service.service.TaskerService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @Tag(name = "Tasker Controller")
 public class TaskerController {
     private final TaskerService taskerService;
-    private final ImageService imageService;
+    // private final ImageService imageService;
 
     @Operation(summary = "Get profile tasker")
     @GetMapping("/profile/{email}")
@@ -46,4 +45,11 @@ public class TaskerController {
         taskerService.addTaskerService(req);
         return new ResponseData<>(HttpStatus.OK.value(), "Add successfully");
     }
+
+    @Operation(summary = "Get services of tasker")
+    @GetMapping("/get-service-tasker/{taskerId}")
+    public ResponseData<?> getServiceTasker(@PathVariable(value = "taskerId") Integer taskerId) {
+        return new ResponseData<>(HttpStatus.OK.value(), "Add successfully", taskerService.getTaskerService(taskerId));
+    }
+
 }

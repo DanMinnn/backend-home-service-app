@@ -1,6 +1,7 @@
 package com.danmin.home_service.service.impl;
 
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -12,6 +13,7 @@ import com.danmin.home_service.dto.request.TaskerServiceDTO;
 import com.danmin.home_service.dto.request.UserDTO;
 import com.danmin.home_service.dto.response.ServiceResponse;
 import com.danmin.home_service.dto.response.TaskerResponse;
+import com.danmin.home_service.dto.response.TaskerServiceResponse;
 import com.danmin.home_service.exception.ResourceNotFoundException;
 import com.danmin.home_service.model.Services;
 import com.danmin.home_service.model.Tasker;
@@ -100,6 +102,13 @@ public class TaskerServiceImpl implements TaskerService {
                         .isVerified(true).build());
             }
         }
+
+    }
+
+    @Override
+    @Transactional
+    public List<TaskerServiceResponse> getTaskerService(Integer taskerId) {
+        return taskerServiceRepository.getServicesOfTasker(taskerId);
 
     }
 }
