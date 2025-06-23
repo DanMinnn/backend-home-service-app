@@ -123,6 +123,27 @@ public class NotificationService {
                 Bookings booking = bookingsRepository.findById(bookingId)
                                 .orElseThrow(() -> new EntityNotFoundException("Booking not found"));
 
+                List<TaskerNotification> notifications = new ArrayList<>();
+
+                if (booking.getTasker() != null) {
+                        TaskerNotification notification = TaskerNotification.builder()
+                                        .tasker(booking.getTasker())
+                                        .booking(booking)
+                                        .title("New Job Available")
+                                        .message("A new " + booking.getService().getName() + " job is available at "
+                                                        + booking.getAddress())
+                                        .type(NotificationType.NEW_TASK)
+                                        .isRead(false)
+                                        .build();
+
+                        notifications.add(taskerNotificationRepository.save(notification));
+
+                        // Send push notification
+                        sendPushNotificationToTasker(booking.getTasker(), booking, null);
+
+                        return notifications;
+                }
+
                 Long bookingServiceId = booking.getService().getId();
                 List<Tasker> taskersToNotify = new ArrayList<>();
 
@@ -140,8 +161,6 @@ public class NotificationService {
                         taskersToNotify = taskerRepository.findAvailableTaskersByReputationAndService(
                                         bookingServiceId, 5);
                 }
-
-                List<TaskerNotification> notifications = new ArrayList<>();
 
                 for (Tasker tasker : taskersToNotify) {
                         // Update exposure statistics

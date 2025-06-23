@@ -86,6 +86,15 @@ public class BookingServiceImpl implements BookingService {
         User user = userRepository.findById(req.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + req.getUserId()));
 
+        // book with favorite tasker
+        Tasker tasker;
+        if (req.getTaskerId() != null) {
+            tasker = taskerRepository.findById(req.getTaskerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Tasker not found with id: " + req.getTaskerId()));
+        } else {
+            tasker = null;
+        }
+
         Services services = serviceRepository.findById(req.getServiceId())
                 .orElseThrow(() -> new ResourceNotFoundException("Service not found with id: " + req.getServiceId()));
 
@@ -97,6 +106,7 @@ public class BookingServiceImpl implements BookingService {
 
         Bookings bookings = Bookings.builder()
                 .user(user)
+                .tasker(tasker)
                 .service(services)
                 .packages(servicesPackage)
                 .address(req.getAddress())
@@ -113,6 +123,10 @@ public class BookingServiceImpl implements BookingService {
                 .cancellationReason(req.getCancellationReason())
                 .cancelledByType(CancelledByType.completed)
                 .build();
+
+        if (req.getTaskerId() != null) {
+            bookings.setBookingStatus(BookingStatus.assigned);
+        }
 
         if (req.getMethodType() == MethodType.bank_transfer) {
 
