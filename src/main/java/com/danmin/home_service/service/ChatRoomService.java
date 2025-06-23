@@ -38,8 +38,15 @@ public class ChatRoomService {
 
     public ChatRoomDTO createChatRoom(ChatRoomDTO req) {
 
-        Bookings bookings = bookingRepository.findById(req.getBookingId())
-                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+        Bookings bookings;
+
+        if (req.getBookingId() != null) {
+            bookings = bookingRepository.findById(req.getBookingId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+
+        } else {
+            bookings = null;
+        }
 
         User user = userRepository.findById(req.getUserId().longValue())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -56,26 +63,6 @@ public class ChatRoomService {
         return ChatRoomDTO.builder().bookingId(chatRoom.getBooking().getId()).userId(chatRoom.getUser().getId())
                 .taskerId(chatRoom.getTasker().getId()).build();
     }
-
-    // public ChatRoom getChatRoom(Integer userId, Integer taskerId, Long bookingId)
-    // {
-
-    // Bookings bookings = bookingRepository.findById(bookingId)
-    // .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
-
-    // User user = userRepository.findById(userId.longValue())
-    // .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-    // Tasker tasker = taskerRepository.findById(taskerId.longValue())
-    // .orElseThrow(() -> new ResourceNotFoundException("Tasker not found"));
-
-    // return chatRoomRepository.findByUserIdAndTaskerIdAndBookingId(userId,
-    // taskerId, bookingId)
-    // .orElseGet(() -> {
-    // return chatRoomRepository
-    // .save(ChatRoom.builder().user(user).tasker(tasker).booking(bookings).build());
-    // });
-    // }
 
     @Transactional
     public List<ChatRoomDTO> getChatRoomForUser(Integer userId) {

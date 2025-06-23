@@ -75,17 +75,6 @@ public class ChatController {
                 return new ResponseData<List<ChatRoomDTO>>(HttpStatus.ACCEPTED.value(), "chat room", chatRooms);
         }
 
-        // @Operation(summary = "Get chat room")
-        // @GetMapping("/room")
-        // public ResponseData<ChatRoom> getChatRoom(@RequestParam Integer userId,
-        // @RequestParam Integer taskerId,
-        // @RequestParam(required = false) Long bookingId) {
-
-        // return new ResponseData<ChatRoom>(HttpStatus.ACCEPTED.value(), "chat room",
-        // chatRoomService.getChatRoom(userId, taskerId, bookingId != null ? bookingId :
-        // 0));
-        // }
-
         @Operation(summary = "Get message chat room")
         @GetMapping("/message/{roomId}")
         @Transactional
