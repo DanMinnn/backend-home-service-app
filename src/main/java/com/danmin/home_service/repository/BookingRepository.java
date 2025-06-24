@@ -80,12 +80,18 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
         @Query("SELECT b FROM Bookings b WHERE b.id = :id")
         Optional<Bookings> findByIdWithPessimisticLock(@Param("id") Long id);
 
-        // schedule
+        // schedule auto update booking status
         @Query("SELECT b FROM Bookings b " +
                         "WHERE b.bookingStatus = 'assigned' " +
                         "AND b.scheduledStart <= :now AND b.scheduledEnd > :now")
         List<Bookings> findAssignedBookingsInProgressWindow(@Param("now") LocalDateTime now);
 
+        @Query("SELECT b FROM Bookings b " +
+                        "WHERE b.bookingStatus = 'in_progress' " +
+                        "AND b.scheduledEnd < :now")
+        List<Bookings> findInProgressBookingsCompletedWindow(@Param("now") LocalDateTime now);
+
+        ///
         @Query("SELECT b FROM Bookings b " +
                         "WHERE b.tasker.id = :taskerId " +
                         "AND b.bookingStatus = 'completed' OR b.bookingStatus = 'cancelled'")

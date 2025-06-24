@@ -34,9 +34,37 @@ public class BookingSchedulerService {
         for (Bookings booking : bookings) {
 
             Tasker tasker = taskerRepository.findTaskerByBookingId(booking.getId());
+            if (tasker != null) {
+                tasker.setAvailabilityStatus(AvailabilityStatus.busy);
+                taskerRepository.save(tasker);
+            } else {
+                log.warn("Tasker not found for booking ID: {}", booking.getId());
+            }
             booking.setBookingStatus(BookingStatus.in_progress);
-            tasker.setAvailabilityStatus(AvailabilityStatus.busy);
-            taskerRepository.save(tasker);
+
+        }
+
+        bookingRepository.saveAll(bookings);
+    }
+
+    @Scheduled(fixedRate = 1000 * 60)
+    @Transactional
+    public void updateBookingCompleted() {
+        LocalDateTime now = LocalDateTime.now();
+
+        List<Bookings> bookings = bookingRepository.findInProgressBookingsCompletedWindow(now);
+
+        for (Bookings booking : bookings) {
+
+            Tasker tasker = taskerRepository.findTaskerBusyByBookingId(booking.getId());
+            if (tasker != null) {
+                tasker.setAvailabilityStatus(AvailabilityStatus.available);
+                taskerRepository.save(tasker);
+            } else {
+                log.warn("Tasker not found for booking ID: {}", booking.getId());
+            }
+
+            booking.setBookingStatus(BookingStatus.completed);
         }
 
         bookingRepository.saveAll(bookings);
