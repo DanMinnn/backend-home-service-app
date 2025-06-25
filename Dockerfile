@@ -1,5 +1,5 @@
 # Stage 1: Development
-FROM maven:3.9.9-jdk-17 AS Development
+FROM maven:3.9.10-eclipse-temurin-17 AS development
 
 WORKDIR /app
 COPY pom.xml .
@@ -8,7 +8,7 @@ RUN mvn clean test
 
 
 # Stage 2: build
-FROM maven:3.9.9-jdk-17 AS Build    
+FROM maven:3.9.10-eclipse-temurin-17 AS build    
 
 WORKDIR /app
 COPY pom.xml .
