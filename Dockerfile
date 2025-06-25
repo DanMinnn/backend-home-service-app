@@ -1,47 +1,33 @@
-# Stage 1: Build the application
-FROM maven:3.9.9-openjdk-17 AS builder
+# Stage 1: Development
+FROM maven:3.9.9-jdk-17 AS Development
 
 WORKDIR /app
-
-# Copy Maven wrapper and pom.xml first (for better caching)
 COPY pom.xml .
-COPY mvnw .
-COPY .mvn .mvn
-
-# Download dependencies (this layer will be cached)
-RUN mvn dependency:go-offline -B
-
-# Copy source code
 COPY src ./src
+RUN mvn clean test
 
-# Build the application
-RUN mvn clean package -DskipTests -B
 
-# Stage 2: Create the runtime image
+# Stage 2: build
+FROM maven:3.9.9-jdk-17 AS Build    
+
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+# Stage 3: Production
 FROM openjdk:17
 
-WORKDIR /app
+# Create a non-root user
+RUN useradd --create-home appuser
 
-# Install curl for health checks
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+# Switch to the non-root user
+USER appuser
 
-# Copy the built JAR from the builder stage
-COPY --from=builder /app/target/*.jar backend-service.jar
+ARG JAR_FILE=target/*.jar
 
-# Create non-root user for security
-RUN addgroup --system spring && adduser --system spring --ingroup spring
-RUN chown -R spring:spring /app
-USER spring:spring
+COPY ${JAR_FILE} backend-service.jar
 
-# Add health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8080/actuator/health || exit 1
+ENTRYPOINT ["java", "-jar", "backend-service.jar"]
 
 EXPOSE 8080
-
-# JVM optimizations for containers
-ENTRYPOINT ["java", \
-    "-Djava.security.egd=file:/dev/./urandom", \
-    "-XX:+UseContainerSupport", \
-    "-XX:MaxRAMPercentage=75.0", \
-    "-jar", "backend-service.jar"]
