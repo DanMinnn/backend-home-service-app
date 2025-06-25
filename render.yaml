@@ -1,7 +1,6 @@
 services:
   # PostgreSQL Database (Managed Service)
-  - type: postgres
-    name: home-service-postgres
+  - name: home-service-postgres
     plan: starter
     databaseName: home_service_db
     user: homeservice_user
