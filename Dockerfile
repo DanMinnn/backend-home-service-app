@@ -1,5 +1,5 @@
 # Stage 1: Build the application
-FROM maven:3.9.4-openjdk-17-slim AS builder
+FROM maven:3.9.9-openjdk-17 AS builder
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests -B
 
 # Stage 2: Create the runtime image
-FROM openjdk:17-jdk-slim
+FROM openjdk:17
 
 WORKDIR /app
 
