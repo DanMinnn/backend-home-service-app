@@ -17,17 +17,21 @@ RUN mvn clean package -DskipTests
 
 # Stage 3: Production
 FROM openjdk:17
+WORKDIR /app
 
-# Create a non-root user
-RUN useradd --create-home appuser
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Switch to the non-root user
-USER appuser
+# Copy JAR file from build stage
+COPY --from=build /app/target/*.jar backend-service.jar
 
-ARG JAR_FILE=target/*.jar
+# Create non-root user for security
+RUN addgroup --system spring && adduser --system spring --ingroup spring
+RUN chown -R spring:spring /app
+USER spring:spring
 
-COPY ${JAR_FILE} backend-service.jar
-
-ENTRYPOINT ["java", "-jar", "backend-service.jar"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 EXPOSE 8080
+ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "backend-service.jar"]
