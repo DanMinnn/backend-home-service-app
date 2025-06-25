@@ -1,10 +1,4 @@
 services:
-  # PostgreSQL Database (Managed Service)
-  - name: home-service-postgres
-    plan: starter
-    databaseName: home_service_db
-    user: homeservice_user
-
   # Redis Cache
   - type: redis
     name: home-service-redis
@@ -77,4 +71,12 @@ services:
       - key: CLOUDINARY_API_SECRET
         sync: false
     
+    # PostgreSQL Database (Managed Service)
+databases:
+  - name: home-service-postgres
+    plan: starter
+    databaseName: home_service_db
+    user: homeservice_user
+    postgresMajorVersion: "17.2"
+      
     healthCheckPath: /actuator/health
