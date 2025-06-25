@@ -5,7 +5,7 @@ spring:
   application:
     name: home-service
   profiles:
-    active: @spring.profiles.active@
+    active: "@spring.profiles.active@"
 
 management:
   endpoints:
