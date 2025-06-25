@@ -78,5 +78,3 @@ databases:
     databaseName: home_service_db
     user: homeservice_user
     postgresMajorVersion: "17.2"
-      
-    healthCheckPath: /actuator/health
