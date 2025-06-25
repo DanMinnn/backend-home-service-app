@@ -1,0 +1,81 @@
+services:
+  # PostgreSQL Database (Managed Service)
+  - type: postgres
+    name: home-service-postgres
+    plan: starter
+    databaseName: home_service_db
+    user: homeservice_user
+
+  # Redis Cache
+  - type: redis
+    name: home-service-redis
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
+
+  # Web Service (Spring Boot App)
+  - type: web
+    name: home-service-backend
+    env: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    envVars:
+      # Database Configuration
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: home-service-postgres
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: home-service-postgres
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: home-service-postgres
+          property: password
+      
+      # Redis Configuration
+      - key: SPRING_REDIS_HOST
+        fromService:
+          type: redis
+          name: home-service-redis
+          property: host
+      - key: SPRING_REDIS_PORT
+        fromService:
+          type: redis
+          name: home-service-redis
+          property: port
+      
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: SENDGRID_FROM_EMAIL
+        sync: false
+      - key: SENDGRID_TEMPLATE_ID
+        sync: false
+      - key: SENDGRID_TEMPLATE_ID_CHANGE_PASSWORD
+        sync: false
+      - key: JWT_ACCESS_KEY
+        sync: false
+      - key: JWT_EXPIRATION
+        value: "86400000"
+      - key: JWT_REFRESH_KEY
+        sync: false
+      - key: JWT_RESET_KEY
+        sync: false
+      - key: VNP_VERSION
+        sync: false
+      - key: VNP_TMNCODE
+        sync: false
+      - key: VNP_HASH_SECRET
+        sync: false
+      - key: VNP_PAYMENT_URL
+        sync: false
+      - key: VNP_RETURN_URL
+        sync: false
+      - key: CLOUDINARY_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+    
+    healthCheckPath: /actuator/health

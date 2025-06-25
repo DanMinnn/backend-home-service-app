@@ -9,7 +9,6 @@ import java.util.Set;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-import org.locationtech.jts.geom.Point;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
@@ -35,9 +34,6 @@ import lombok.experimental.SuperBuilder;
 @Entity
 @Table(name = "tasker", uniqueConstraints = { @UniqueConstraint(columnNames = "email, phone_number") })
 public class Tasker extends AbstractUser<Integer> implements BaseUser {
-
-    @Column(name = "earth_location", columnDefinition = "geometry(Point,4326)")
-    private Point earthLocation;
 
     @Column(name = "latitude")
     private BigDecimal latitude;

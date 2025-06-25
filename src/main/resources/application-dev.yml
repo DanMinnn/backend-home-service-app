@@ -27,10 +27,10 @@ spring:
 
   #Sendgrid
   sendgrid:
-    api-key: ${SENDGRID_API_KEY}
-    fromEmail: ${SENDGRID_FROM_EMAIL}
-    templateId: ${SENDGRID_TEMPLATE_ID}
-    templateIdChangePassword: ${SENDGRID_TEMPLATE_ID_CHANGE_PASSWORD}
+    api-key: ${SENDGRID_API_KEY:SENDGRID_API_KEY}
+    fromEmail: ${SENDGRID_FROM_EMAIL:SENDGRID_FROM_EMAIL}
+    templateId: ${SENDGRID_TEMPLATE_ID:SENDGRID_TEMPLATE_ID}
+    templateIdChangePassword: ${SENDGRID_TEMPLATE_ID_CHANGE_PASSWORD:SENDGRID_TEMPLATE_ID_CHANGE_PASSWORD}
     verificationLink: https://b639-14-191-193-79.ngrok-free.app/register/confirm-email
     changePasswordLink: https://6d13-14-191-193-7.ngrok-free.app/auth/reset-password
 
@@ -47,10 +47,10 @@ openapi:
     version: 1.0.0
 
 jwt:
-  access-key: ${JWT_ACCESS_KEY}
-  expiration: ${JWT_EXPIRATION}
-  refresh-token: ${JWT_REFRESH_KEY}
-  reset-key: ${JWT_RESET_KEY}
+  access-key: ${JWT_ACCESS_KEY:JWT_ACCESS_KEY}
+  expiration: ${JWT_EXPIRATION:10}
+  refresh-token: ${JWT_REFRESH_KEY:JWT_REFRESH_KEY}
+  reset-key: ${JWT_RESET_KEY:JWT_RESET_KEY}
 
 app:
   notification:
@@ -58,14 +58,14 @@ app:
     max-taskers: 10
 
 vnpay:
-  version: ${VNP_VERSION}
-  tmn_Code: ${VNP_TMNCODE}
-  hash_secret: ${VNP_HASH_SECRET}
-  payment_url: ${VNP_PAYMENT_URL}
-  return_url: ${VNP_RETURN_URL}
+  version: ${VNP_VERSION:VNP_VERSION}
+  tmn_Code: ${VNP_TMNCODE:VNP_TMNCODE}
+  hash_secret: ${VNP_HASH_SECRET:VNP_HASH_SECRET}
+  payment_url: ${VNP_PAYMENT_URL:VNP_PAYMENT_URL}
+  return_url: ${VNP_RETURN_URL:VNP_RETURN_URL}
 
 cloudinary:
-  cloud_name: ${CLOUDINARY_NAME}
-  api_key: ${CLOUDINARY_API_KEY}
-  api_secret: "CLOUDINARY_API_SECRET"
+  cloud_name: ${CLOUDINARY_NAME:CLOUDINARY_NAME}
+  api_key: ${CLOUDINARY_API_KEY:CLOUDINARY_API_KEY}
+  api_secret: "CLOUDINARY_API_SECRET:CLOUDINARY_API_SECRET"
   

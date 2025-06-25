@@ -4,26 +4,40 @@ services:
     container_name: postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 123456
-      POSTGRES_DB: home-service
+      POSTGRES_USER: ${SPRING_DATASOURCE_USERNAME}
+      POSTGRES_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - postgres:/data/postgres
+      - postgres_data:/var/lib/postgresql/data
       - ./home-service.sql:/docker-entrypoint-initdb.d/home-service.sql
     ports:
       - '5432:5432'
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SPRING_DATASOURCE_USERNAME} -d ${POSTGRES_DB}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   redis:
     image: redis:6.2-alpine
     container_name: redis
     hostname: redis
-    ports:
-      - '6379:6379'
+    volumes:
+      - redis_data:/data
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
       - REDIS_DISABLE_COMMANDS=FLUSHDB;FLUSHALL
     networks:
       - backend
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   backend-service:
     container_name: home-service
@@ -33,11 +47,42 @@ services:
     ports:
       - "8080:8080"
     networks:
-      - default
+      - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL}
+      - SENDGRID_TEMPLATE_ID=${SENDGRID_TEMPLATE_ID}
+      - SENDGRID_TEMPLATE_ID_CHANGE_PASSWORD=${SENDGRID_TEMPLATE_ID_CHANGE_PASSWORD}
+      - JWT_ACCESS_KEY=${JWT_ACCESS_KEY}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - JWT_REFRESH_KEY=${JWT_REFRESH_KEY}
+      - JWT_RESET_KEY=${JWT_RESET_KEY}
+      - VNP_VERSION=${VNP_VERSION}
+      - VNP_TMNCODE=${VNP_TMNCODE}
+      - VNP_HASH_SECRET=${VNP_HASH_SECRET}
+      - VNP_PAYMENT_URL=${VNP_PAYMENT_URL}
+      - VNP_RETURN_URL=${VNP_RETURN_URL}
+      - CLOUDINARY_NAME=${CLOUDINARY_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
 
 networks:
   backend:
     driver: bridge
 
 volumes:
-  postgres:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
