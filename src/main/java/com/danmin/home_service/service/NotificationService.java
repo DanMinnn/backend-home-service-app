@@ -5,8 +5,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.danmin.home_service.common.NotificationType;
@@ -119,7 +121,8 @@ public class NotificationService {
         }
 
         // =================== BUSINESS LOGIC METHODS ===================
-        public List<TaskerNotification> notifyAvailableTaskers(Long bookingId) {
+        @Async
+        public CompletableFuture<List<TaskerNotification>> notifyAvailableTaskers(Long bookingId) {
                 Bookings booking = bookingsRepository.findById(bookingId)
                                 .orElseThrow(() -> new EntityNotFoundException("Booking not found"));
 
@@ -141,7 +144,7 @@ public class NotificationService {
                         // Send push notification
                         sendPushNotificationToTasker(booking.getTasker(), booking, null);
 
-                        return notifications;
+                        return CompletableFuture.completedFuture(notifications);
                 }
 
                 Long bookingServiceId = booking.getService().getId();
@@ -182,7 +185,7 @@ public class NotificationService {
                         // Send push notification
                         sendPushNotificationToTasker(tasker, booking, null);
                 }
-                return notifications;
+                return CompletableFuture.completedFuture(notifications);
         }
 
         /**

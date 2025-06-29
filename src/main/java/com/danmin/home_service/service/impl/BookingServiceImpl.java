@@ -146,7 +146,11 @@ public class BookingServiceImpl implements BookingService {
 
             bookings.setPaymentStatus("paid");
             bookingRepository.save(bookings);
-            notificationService.notifyAvailableTaskers(bookings.getId());
+            try {
+                notificationService.notifyAvailableTaskers(bookings.getId());
+            } catch (Exception e) {
+                log.warn("Notify tasker failed", e);
+            }
             Map<String, Object> response = new HashMap<>();
             response.put("bookingId", bookings.getId());
             response.put("status", "confirmed");
@@ -161,7 +165,11 @@ public class BookingServiceImpl implements BookingService {
 
             bookings.setPaymentStatus("paid");
             bookingRepository.save(bookings);
-            notificationService.notifyAvailableTaskers(bookings.getId());
+            try {
+                notificationService.notifyAvailableTaskers(bookings.getId());
+            } catch (Exception e) {
+                log.warn("Notify tasker failed: {}", e.getMessage());
+            }
             return response;
         } else {
             bookingRepository.save(bookings);
@@ -177,7 +185,11 @@ public class BookingServiceImpl implements BookingService {
                     .transactionId(transactionId)
                     .paymentGateway(MethodType.cash.toString()).build());
 
-            notificationService.notifyAvailableTaskers(bookings.getId());
+            try {
+                notificationService.notifyAvailableTaskers(bookings.getId());
+            } catch (Exception e) {
+                log.warn("Notify tasker failed: {}", e.getMessage());
+            }
             Map<String, Object> response = new HashMap<>();
             response.put("bookingId", bookings.getId());
             response.put("status", "unpaid");
