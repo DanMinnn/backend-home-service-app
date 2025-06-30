@@ -106,6 +106,7 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
         return uri.startsWith("/auth/") ||
                 uri.startsWith("/register/") ||
                 uri.startsWith("/public/") ||
+                uri.equals("/payment/vnpay_return") ||
                 uri.equals("/signin") ||
                 uri.equals("/signup");
     }
