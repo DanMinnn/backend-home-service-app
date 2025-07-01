@@ -15,11 +15,12 @@ import lombok.*;
 @Entity
 @Table(name = "tasker_notification")
 public class TaskerNotification extends AbstractEntityCreatedAt<Long> {
-    @ManyToOne
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tasker_id")
     private Tasker tasker;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id")
     private Bookings booking;
 
